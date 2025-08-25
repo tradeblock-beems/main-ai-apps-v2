@@ -408,7 +408,176 @@
 - [x] **Phase Worklog Entry by the Scribe:** The scribe agent must create a worklog entry summarizing this completed phase
 ***CLOSEOUT NOTES:*** Worklog entry completed documenting real data integration, performance optimization, and comprehensive testing results.
 
-- [ ] **Phase GitHub commit by the @vercel-debugger:** Commit this now completed phase-branch to Github, following standard approaches and safety protocols
+- [x] **Phase GitHub commit by the @vercel-debugger:** Commit this now completed phase-branch to Github, following standard approaches and safety protocols
+***CLOSEOUT NOTES:*** Phase 6 completion committed to feature branch `feature/analytics-foundation-phase6-integration`. Complete real data integration, performance optimization, and comprehensive testing committed successfully.
+
+- [x] **Delete feature branch:** After merging, the @vercel-debugger will delete the feature branch from local and remote repositories
+***CLOSEOUT NOTES:*** Phase 6 Git operations completed. Analytics Foundation project ready for final quality assurance with outstanding real data integration foundation.
+
+---
+
+## Phase 6.5: New User Cohort Analysis Visualization
+**Primary Owner:** @project-agent-dev-hub-dev  
+**Collaboration:** @squad-agent-database-master (cohort queries), @squad-agent-architect (architecture guidance)
+
+### **Objective**: Add cohort analysis visualization showing 72-hour completion rates for new user actions (closet add, wishlist add, create offer) grouped by monthly or weekly cohorts
+
+- [ ] Review all tasks for this phase. Is there anything to tweak based on what we discovered, learned, or changed in the previous phase?
+- [ ] **@vercel-debugger**: Create new feature branch following `@technical-standard-approaches.md`
+
+### **Database Analysis & Query Development** 
+**Primary Owner:** @squad-agent-database-master
+
+- [ ] Analyze existing fact table structure for cohort analysis requirements:
+  - [ ] Verify fact table columns support 72-hour completion calculations
+  - [ ] Identify optimal indexing strategy for cohort queries
+  - [ ] Document data quality considerations for cohort analysis
+- [ ] Design cohort analysis query logic:
+  - [ ] Create monthly cohort grouping query (DATE_TRUNC('month', created_at))
+  - [ ] Create weekly cohort grouping query (DATE_TRUNC('week', created_at))
+  - [ ] Implement 72-hour completion window calculations (action_date <= created_at + INTERVAL '72 hours')
+  - [ ] Handle NULL values for users who haven't completed actions
+- [ ] Create cohort completion rate calculations:
+  - [ ] Calculate closet add completion rate per cohort
+  - [ ] Calculate wishlist add completion rate per cohort  
+  - [ ] Calculate create offer completion rate per cohort
+  - [ ] Calculate "all actions" completion rate per cohort (users who completed all 3)
+- [ ] Optimize query performance:
+  - [ ] Use EXPLAIN ANALYZE to validate query performance
+  - [ ] Ensure queries complete within 400ms target
+  - [ ] Implement proper error handling for edge cases
+- [ ] Create test queries and validate data accuracy:
+  - [ ] Test with recent cohorts (still within 72-hour window)
+  - [ ] Validate calculation accuracy against manual spot checks
+  - [ ] Test both monthly and weekly cohort calculations
+
+### **TypeScript Interface Design**
+**Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect review
+
+- [ ] Design cohort data interfaces in `src/types/analytics.ts`:
+  - [ ] `CohortData` interface for individual cohort metrics
+  - [ ] `CohortActionMetrics` interface for action completion data
+  - [ ] `CohortAnalysisParams` interface for API query parameters
+  - [ ] `CohortPeriodType` enum for monthly/weekly toggle
+- [ ] Design API response interfaces:
+  - [ ] `CohortAnalysisResponse` extending existing `ApiResponse<T>` pattern
+  - [ ] Ensure compatibility with existing error handling patterns
+- [ ] Create chart configuration interfaces:
+  - [ ] `CohortChartConfig` for D3.js visualization settings
+  - [ ] `CohortColorScheme` for action type color coding
+
+### **API Endpoint Development**
+**Primary Owner:** @project-agent-dev-hub-dev
+
+- [ ] Create cohort analysis API route `app/api/analytics/cohort-analysis/route.ts`:
+  - [ ] Implement GET endpoint with query parameter support
+  - [ ] Support `period` parameter (monthly/weekly)
+  - [ ] Support `months` parameter for data range (default 12 months)
+  - [ ] Integrate with database query functions from @squad-agent-database-master
+- [ ] Implement response formatting:
+  - [ ] Transform database results to `CohortData[]` format
+  - [ ] Calculate percentage values with proper rounding
+  - [ ] Include metadata (total cohorts, date ranges)
+- [ ] Add comprehensive error handling:
+  - [ ] Database connection error handling
+  - [ ] Invalid parameter validation
+  - [ ] Performance monitoring and timeout handling
+- [ ] Create mock data endpoint for development:
+  - [ ] `app/api/analytics/cohort-analysis/mock/route.ts`
+  - [ ] Generate realistic cohort completion rate patterns
+  - [ ] Support both monthly and weekly mock data
+
+### **D3.js Visualization Components**
+**Primary Owner:** @project-agent-dev-hub-dev
+
+- [ ] Create cohort period toggle component `src/components/ui/CohortPeriodToggle.tsx`:
+  - [ ] Monthly/Weekly toggle buttons with active state styling
+  - [ ] TypeScript props for callback handling
+  - [ ] Consistent styling with existing DateRangeToggle component
+- [ ] Create cohort analysis chart component `src/components/charts/CohortAnalysisChart.tsx`:
+  - [ ] Follow existing D3.js + React integration patterns
+  - [ ] Implement grouped bar chart visualization (4 action types per cohort)
+  - [ ] Use color coding for different actions (closet=blue, wishlist=green, offer=orange, all=purple)
+  - [ ] Add responsive SVG with configurable dimensions
+  - [ ] Implement smooth transitions for data updates
+- [ ] Add interactive features:
+  - [ ] Hover tooltips showing detailed cohort metrics
+  - [ ] X-axis labels for cohort periods (monthly: "Jan 2024", weekly: "Week 3")
+  - [ ] Y-axis percentage scaling (0-100%) with proper tick formatting
+  - [ ] Legend component for action type identification
+- [ ] Implement chart animations:
+  - [ ] Staggered bar animations for visual appeal
+  - [ ] Smooth transitions when switching between monthly/weekly views
+  - [ ] Loading states during data fetching
+
+### **Dashboard Integration**
+**Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect review
+
+- [ ] Add cohort analysis section to `src/components/layout/Dashboard.tsx`:
+  - [ ] Create new dashboard section below existing new users chart
+  - [ ] Add section header "New User Cohort Analysis - First 72 Hours"
+  - [ ] Integrate CohortPeriodToggle component
+  - [ ] Add CohortAnalysisChart component with proper data flow
+- [ ] Implement data fetching logic:
+  - [ ] Add cohort data state management with React hooks
+  - [ ] Implement API calls to cohort analysis endpoint
+  - [ ] Add 5-minute caching strategy consistent with existing patterns
+  - [ ] Add 300ms debouncing for period toggle changes
+- [ ] Add loading and error states:
+  - [ ] Loading spinners during cohort data fetching
+  - [ ] Error boundaries with retry functionality
+  - [ ] Fallback to mock data on API failures
+- [ ] Ensure responsive design:
+  - [ ] Mobile-friendly layout for cohort chart
+  - [ ] Proper spacing and alignment with existing dashboard sections
+  - [ ] Test on different screen sizes
+
+### **Testing & Validation**
+**Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect review
+
+- [ ] End-to-end functionality testing:
+  - [ ] Verify cohort analysis section loads successfully
+  - [ ] Test monthly/weekly toggle functionality
+  - [ ] Confirm chart displays correct cohort data
+  - [ ] Validate 72-hour completion rate calculations
+  - [ ] Test with edge cases (recent cohorts, empty cohorts)
+- [ ] Performance validation:
+  - [ ] API response times under 400ms for cohort queries
+  - [ ] Chart renders smoothly with 12+ months of cohort data
+  - [ ] No memory leaks during period toggle changes
+  - [ ] Database queries perform efficiently
+- [ ] Data accuracy validation:
+  - [ ] Spot-check completion rate calculations against database
+  - [ ] Verify cohort grouping accuracy (monthly vs weekly)
+  - [ ] Confirm 72-hour window calculations are correct
+  - [ ] Test timezone handling for creation and action dates
+- [ ] UI/UX validation:
+  - [ ] Chart legend clearly identifies action types
+  - [ ] Tooltips display comprehensive cohort information
+  - [ ] Color scheme is accessible and visually distinct
+  - [ ] Responsive behavior on mobile and tablet devices
+
+### **Build & Integration Testing**
+**Primary Owner:** @project-agent-dev-hub-dev
+
+- [ ] TypeScript compilation validation:
+  - [ ] All new interfaces compile without errors
+  - [ ] No type conflicts with existing code
+  - [ ] Absolute import paths work correctly
+- [ ] Component integration testing:
+  - [ ] New components integrate seamlessly with existing dashboard
+  - [ ] No conflicts with existing D3.js visualizations
+  - [ ] Consistent styling with established theme
+- [ ] API endpoint testing:
+  - [ ] Both real and mock endpoints return valid JSON
+  - [ ] Response format matches TypeScript interfaces
+  - [ ] Error handling works correctly
+
+### **Project Management Tasks**
+
+- [ ] **Phase Review by the Conductor:** The conductor must systematically review the execution checklist for this phase, marking completed tasks and documenting any deviations
+- [ ] **Phase Worklog Entry by the Scribe:** The scribe agent must create a worklog entry summarizing this completed phase
+- [ ] **Phase GitHub commit by the @vercel-debugger:** Commit this now completed phase-branch to Github, following standard approaches and safety protocols  
 - [ ] **Delete feature branch:** After merging, the @vercel-debugger will delete the feature branch from local and remote repositories
 
 ---

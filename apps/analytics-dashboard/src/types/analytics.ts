@@ -72,3 +72,65 @@ export interface ApiError {
   code: string;
   timestamp: string;
 }
+
+// === COHORT ANALYSIS INTERFACES (Phase 6.5) ===
+
+// Individual action completion metrics
+export interface CohortActionMetrics {
+  count: number;
+  percentage: number;
+}
+
+// Complete cohort data for a single period
+export interface CohortData {
+  cohortPeriod: string; // "2024-01" (monthly) or "2024-W03" (weekly)
+  cohortStartDate: string; // First day of cohort period (YYYY-MM-DD)
+  totalUsers: number; // Total users in this cohort
+  actions: {
+    closetAdd: CohortActionMetrics;
+    wishlistAdd: CohortActionMetrics;
+    createOffer: CohortActionMetrics;
+    allActions: CohortActionMetrics; // Users who completed all 3 actions
+  };
+}
+
+// Cohort period type for API parameters
+export type CohortPeriodType = 'monthly' | 'weekly';
+
+// API query parameters for cohort analysis
+export interface CohortAnalysisParams {
+  period: CohortPeriodType; // monthly or weekly
+  months?: string; // Number of periods to analyze (default: 12 for monthly, 24 for weekly)
+}
+
+// API response for cohort analysis
+export interface CohortAnalysisResponse extends ApiResponse<CohortData[]> {
+  metadata: {
+    periodType: CohortPeriodType;
+    periodsAnalyzed: number;
+    analysisWindow: string; // "72 hours"
+    generatedAt: string;
+  };
+}
+
+// Chart configuration for cohort visualization
+export interface CohortChartConfig {
+  width: number;
+  height: number;
+  margin: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  colors: CohortColorScheme;
+  periodType: CohortPeriodType;
+}
+
+// Color scheme for different action types
+export interface CohortColorScheme {
+  closetAdd: string; // Blue theme
+  wishlistAdd: string; // Green theme  
+  createOffer: string; // Orange theme
+  allActions: string; // Purple theme
+}
