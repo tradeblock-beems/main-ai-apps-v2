@@ -1,0 +1,33 @@
+{
+  "jobId": "4357b461-4d6c-497b-a0dc-3669d94bfc7f",
+  "status": "completed",
+  "startTime": "2025-08-05T21:55:06.623Z",
+  "request": {
+    "audienceDescription": "CSV: recent-offer-creators_TEST_20250805_154957.csv",
+    "audienceSize": 0,
+    "title": "🎯 Target acquired: [[var:product_name]]👟",
+    "body": "We saw you shooting your shot so we generated some more offers for you. \r\n\r\n👀 Post a few or tweak the filters to generate offers you like better! →",
+    "deepLink": "https://tradeblock.us/product/collectors-have?productVariantId=[[var:variantID]]&conditionId=1d7b7572-bb87-44b4-8a99-81ddb8e5b692",
+    "dryRun": false
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "fnW4d9JxrEwEikoHmFumWw:APA91bESgR0TNXy3YqDMZCwFyOZOLdgnejHcR-fYndGIpwyjp7iS9uiar0S09EYKlKypNb2HkTGavj_gD9CLfLo1c5lNV7pJEw5eP7wsWzYXMAXYi60Ffhw"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-05T21:55:07.078Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-05T21:55:07.080Z"
+}

@@ -1,0 +1,13 @@
+{
+  "automationId": "99ba6c45-be0c-4821-b00a-2a86b16b62ab",
+  "timestamp": "2025-08-20T14:11:17.129Z",
+  "action": "control",
+  "controlAction": "cancel",
+  "reason": "Cancelled by user from test interface",
+  "result": {
+    "success": true,
+    "executionId": "99ba6c45-be0c-4821-b00a-2a86b16b62ab",
+    "status": "cancelled",
+    "message": "Automation cancelled: Cancelled by user from test interface"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "jobId": "84a8c418-9ef7-4fe9-9d9c-6817327050e1",
+  "status": "completed",
+  "startTime": "2025-08-07T15:39:32.482Z",
+  "request": {
+    "audienceDescription": "CSV: test-audience_2025-07-30.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": false
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "eZop86rYu0qMrN5-O-DbMB:APA91bE_fjU2EKRUuygpry00D8B03pD3R26gBUbXSIOR-zMgQLlNjhVF-yC39tpHYgFzoWyTH59xNPMD29TyGOxcbrSXmZdx0KZ3ApX1IB8QnPVxQe0BmPE"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-07T15:39:33.029Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-07T15:39:33.030Z"
+}

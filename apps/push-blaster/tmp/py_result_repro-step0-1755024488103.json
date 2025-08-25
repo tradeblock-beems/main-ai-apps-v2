@@ -1,0 +1,10 @@
+{
+  "code": 0,
+  "signal": null,
+  "executionTime": 224,
+  "command": "/usr/local/bin/python3 /Users/AstroLab/Desktop/code-projects/main-ai-apps/scripts/repro_step0.py --dry_run",
+  "cwd": "/Users/AstroLab/Desktop/code-projects/main-ai-apps",
+  "env": [
+    "PYTHONPATH"
+  ]
+}

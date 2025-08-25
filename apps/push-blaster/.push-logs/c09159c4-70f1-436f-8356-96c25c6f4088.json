@@ -1,0 +1,221 @@
+{
+  "jobId": "c09159c4-70f1-436f-8356-96c25c6f4088",
+  "status": "completed",
+  "startTime": "2025-08-07T20:47:42.682Z",
+  "request": {
+    "audienceDescription": "CSV: part-3-of-4-remaining.csv",
+    "audienceSize": 0,
+    "title": "📈 Your shoe is in HIGH demand",
+    "body": "The [[var:product_name]] is the [[var:trending_rank]] most targeted shoe this week. See [[var:variant_open_offers]] trades you can claim right now →",
+    "deepLink": "https://tradeblock.us/product/offers-to-trade?productVariantId=[[var:variantID]]",
+    "dryRun": false
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "cHHhVNhpSGiJeyqz2EspKH:APA91bElniZcI-5RpPjsB6W6DO2EPZSDHjIXo7QBgOszVpFU7H3XCbzsYQ1pxXjGN8uoivHgcIK7btFZzcFEuo1ojAemaa_PR3hllElZ4iwfchkxWLbnKws"
+      ],
+      "timestamp": "2025-08-07T20:47:44.508Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "ffsTx6B19kRxnpKLjeBBmF:APA91bEZZEYpr1BEF6UpPCM4dkq-S4EDb6rF2WBYeai0zrdeepRLOfr3aql72qafVIkres0RFJfczAFSTJ2ozbAjKZz1EfvHXRm4L6bmlUQm8FsPqjQ9aQs"
+      ],
+      "timestamp": "2025-08-07T20:47:44.509Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "cciHlOiYnEU:APA91bFKM4qAhCSzBywXkaXMa8tnSGfQr8pBXoFjh-GsmsDQl_Zsi0b9AJbQz92SCoYPv0sw37S_T-VTUvxl5WtAKOySKKV-SQoa7zeyC6YiKxNdgZhmj6OwZQrBR9GFLsJqygHoTYUv"
+      ],
+      "timestamp": "2025-08-07T20:47:44.512Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "fkcGzLZxQE3Kg89FRuktk7:APA91bHB2MmpegDj_42JAEzMvqZV_mIHdn35nUHLHcKTdWOJT2KTCn4gvX5b4saUsO2csPXsoxSX6SlgwQ-oVINDqIRmiGFZ310yhRds2lETgsimFm-5xWjAXqprSpYSb4tRfu6hHSEM"
+      ],
+      "timestamp": "2025-08-07T20:47:44.512Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 4,
+      "successfulTokens": [],
+      "failedTokens": [
+        "ch23oMkgWkOBnZaKkrvWnG:APA91bFSSZHJZICaGvLhbJgOPu7AxNDBo5cTscFGPt0i0jRszcejE1rTb-LfcWLEJcXlj6Xo8eI0Fb4dlNTpxWX5ddGAn_cbmGO-HwCltXVaUshuCU3XUAdVhxdREC6gRco-E-ZnO5GQ",
+        "cwSMnyHDsEVOrCyRYOuRlO:APA91bH5XHMbdDAXWFEu5ZA4ND1awb1knffXrC-CP5i0BJThODFq6SJ6bIesVaymXrb_nAzmndWpRJNGufp6br3aS0kR0aSLKcv6Kq1D2bvjXq16IxC1xVU23LSss4qgsvQ25Pr2QY1F",
+        "d7aTrVY7n0gNkA7a2Q7MqD:APA91bGbwEe9uGznh0-Vr4f10gBoeWabH628n7esfZlb8JjkaHTsXjaCMnQGnFcjo2xZ8A8aXt4iQUcUVyDzmyF55wPbomSEcObZurUP9cAYoCMj45Uvids",
+        "ebs8Y1itSlO2V2Z23WXYt9:APA91bHZ8BUMW3QF5yrFz7c-fsgjC2QrhKOvdReFWPMVsiRpYsC0W-SVRJSxHH_eeZY98loxKkrd9QF62AQyOJ_qcyCDB0x_h3eDrxxQxL7iAOtGGBKyiR0"
+      ],
+      "timestamp": "2025-08-07T20:47:44.517Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "c2ZQ4kJkQhOELqDfj8lyIj:APA91bFKy9dhG5JhL8S1_7ZnZ35hvgZHpFqe7lRAfr52qlzkVayACoRKjI21amncMQs2fIjDcQCqL_WzJ1nZW3U_3xGAU5odrToSXt_ClAoKRh2gqOkOXFo"
+      ],
+      "timestamp": "2025-08-07T20:47:44.524Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 5,
+      "successfulTokens": [],
+      "failedTokens": [
+        "f3miVTiP_0CjgkotMhCtBy:APA91bF_xzR3qKgH2fqLu5qLORy6ZWar0rRcSALM4cp00-O5ry9OJGMtrxCiIiWfTjnerkaMJE-KKR-RDAKOMPnPpZygGXwxUOstsvCjGEmHjTDVqIxPTf3iSQzrG-GSteujGTNBFNF2",
+        "cYvenFzwDUUYv6BBElsTCU:APA91bEFZzAbGhiA3AQDu9syOMqzgevMw6LDGBflchBnX6a_6w60sK01smW8y34KzEOZpykDb9tatNyWRk1jD4mQsQV8ecDUT6Vmy3acbsm3pEtDuh9Mr8dceKsB2b7o-rDs3eRFXZbq",
+        "fKhNfGu1GUfJpQ2hWw7AuF:APA91bHjBNwqE2nCpwiLJeocDWr96pyzYCVZCPbPoL7IpT7UCm1PBSD_z3dNdlE8U6ZDCbr6bde06N4p7z2GFcVe5MdlD0cye0me58yzKWOMeX0l1OuaA4liOFt9WjcuKO-7l7NxVx6F",
+        "cpyho74hb0V9oYOdN_fBPX:APA91bEKhpzfkCXp-tBk1bShseCQFB3X5137-ICaeCu7GDB7AQHDAb8zgtE-bhTTMzJBdSeNw90ZzVwpwbZqkEyHxvcIdxIN58MVjlFcFBoXtllzZkaDXZRuuScHDWDE2qv5YU7gdgkk",
+        "cqta8E4OQEeSBp8WHijFlZ:APA91bFTrjKNVjnoT9EJOEq1WWKYLipSfZkYjbl_9T0SiwZhF5HloGObYBzmUey7LTA_QvFI2gXqYM8ajivKSlZ7A6bIt5M82pwH2tUQBqdsiGYD1FISs5M"
+      ],
+      "timestamp": "2025-08-07T20:47:44.541Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "fBv5edOqGEnkgDHbrBHn8F:APA91bG1TYVppis9jAKEPNiE26ac2FtzaUBley8wFUzkS6HxxiXd6xhJfyi2exRWoy9zXqNC-4l558wCNwUhpGDyvziJ30B3u_pmvjYBRs7irNZlTvo8W2o"
+      ],
+      "timestamp": "2025-08-07T20:47:44.558Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "en7I9nVoaHU:APA91bH7Zc1YzyoMSucoHslTCGCp6-e27_-tRfg7e879fx3eP0H3MqNllvlezdigx5R6tQ0JQmKI75WQ7fyAwqVVt14-ze-Yy2Ea8JXz94qH96l0GmfKBwIbDjDuIa9sRpt5xEKHabYJ"
+      ],
+      "timestamp": "2025-08-07T20:47:44.559Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "f2wq82bLWO8:APA91bF4NMxscP2hLcLe9XIUBzQemqLVbpdm7KWlGMPnkrkqaE3pYo3x0iZmvq3JlfqQSW3HycFhJeo95xqUVXz3J4IDe0aJfDqmYD-V9Y5djMP6lhCs8KzvV2xXumFK93tPsA7w67Zr"
+      ],
+      "timestamp": "2025-08-07T20:47:44.559Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 2,
+      "successfulTokens": [],
+      "failedTokens": [
+        "fUKUQs3-BUMojOqlz3WRa5:APA91bHL7o_YK9juaIeSUwe0E4ioAdnG-8YGjhh7KIwdAGQQm6eorhfOn9FE5HqapUs4Cq1mKxg6np7_IXnoq3KBcY5Ww5rYqVm4zfVliIJMyqQhETXV9fM",
+        "c2cOob8TQ0Iot3Aoi6DwA2:APA91bHCkFNFda__eiXHYbYJPinXz7AIFe381Yc-upuLQqMNB6hdoo8LO2KN-FYix67_PYDiIdFUOYfS9wwhchkbsOMEFe7KCwfrnD2TqhbnaTU11IPj_d4"
+      ],
+      "timestamp": "2025-08-07T20:47:44.559Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "eKp4pOLiT66rfJd4CFaueT:APA91bGItWpYP06WWfXTejgW-NNPsvKie6Ik8HLo1wvg7ChM4by4TDhi4rqme9nHYeKNxt6kcoxkHrXNP-RMBlIadE33bfqzFZFtBzyRQ2ixUxT5lwyUK1A"
+      ],
+      "timestamp": "2025-08-07T20:47:44.559Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "dNhvpV2TlECYidvMtTFFP1:APA91bFKKMvl53C2sJA9aB2UavDATiDWPn1mXwChwrliz-c2T9XFIOAsgwJpGmqCPb-236vNUf37n7SGoWMZNHhP3Q1Vj5yBjfvDlDuy6dBBq0pOrv9r0wU"
+      ],
+      "timestamp": "2025-08-07T20:47:44.559Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "cWW6riP2QU2NhQArB-ojjv:APA91bEstnp6uMyZms_wxE2i9FsqoKLbhKfbkxAwOapHR5Jp30JWDN5vU_T3sXPc_t6d2WaV1yLaXfi9qPgwQyVUDQGVLQC_PbdhRQTer4LXvW2qmOuSuQFixmwebeVvO5thObm4egOp"
+      ],
+      "timestamp": "2025-08-07T20:47:44.560Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "eEmAKMBMRSC6Cc7mgYOZiV:APA91bFzcTFj2t6XV53QntyLGr7yYEW8d9O2rmhUwS7WxtYinTgJmK6NF7LKODT0IDcR7qd3f2jeY4vnn9iCHu97blTOwFHiyCZ9v_wFhia9HgFqXW2UaE9QiBG6I3N1LEs-VNwMU5x4"
+      ],
+      "timestamp": "2025-08-07T20:47:44.560Z"
+    },
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "failed",
+      "successCount": 0,
+      "failureCount": 1,
+      "successfulTokens": [],
+      "failedTokens": [
+        "c75OYsiH5q4:APA91bFuoRivp1KbLnVppwziaJNN2WQFLSSvWV_jPF8nYUipZqXS8f7F-yvValxreXRp4v8DT7VXtvp587sRBYFNnGEceeT4skV2Eqiz2hdaL2Mr-VBcQ9HZ-aOEGjCOadnhRCKVAfBs"
+      ],
+      "timestamp": "2025-08-07T20:47:44.574Z"
+    }
+  ],
+  "summary": {
+    "successCount": 0,
+    "failedCount": 24,
+    "totalTokens": 24
+  },
+  "endTime": "2025-08-07T20:47:44.574Z"
+}

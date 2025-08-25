@@ -1,0 +1,7 @@
+{
+  "PATH": "/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/AstroLab/.cursor/extensions/ms-python.debugpy-2025.6.0-darwin-x64/bundled/scripts/noConfigScripts",
+  "USER": "AstroLab",
+  "HOME": "/Users/AstroLab",
+  "PWD": "/Users/AstroLab/Desktop/code-projects/main-ai-apps",
+  "SHELL": "/bin/zsh"
+}

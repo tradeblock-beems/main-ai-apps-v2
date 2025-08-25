@@ -1,0 +1,15 @@
+{
+  "jobId": "25a4c735-8262-4583-ba42-81819ca8aa96",
+  "status": "in_progress",
+  "startTime": "2025-08-05T21:54:42.529Z",
+  "request": {
+    "audienceDescription": "CSV: recent-offer-creators_TEST_20250805_154957.csv",
+    "audienceSize": 0,
+    "title": "🎯 Target acquired: [[var:top_target_shoe_name]] 👟",
+    "body": "We saw you shooting your shot so we generated some more offers for you. \r\n\r\n👀 Post a few or tweak the filters to generate offers you like better! →",
+    "deepLink": "https://tradeblock.us/product/collectors-have?productVariantId=[[var:variantID]]&conditionId=1d7b7572-bb87-44b4-8a99-81ddb8e5b692",
+    "dryRun": true
+  },
+  "batches": [],
+  "summary": {}
+}

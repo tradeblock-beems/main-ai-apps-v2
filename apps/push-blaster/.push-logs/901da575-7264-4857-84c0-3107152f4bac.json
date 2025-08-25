@@ -1,0 +1,33 @@
+{
+  "jobId": "901da575-7264-4857-84c0-3107152f4bac",
+  "status": "completed",
+  "startTime": "2025-07-31T02:32:25.879Z",
+  "request": {
+    "audienceDescription": "CSV: test-audience_2025-07-30.csv",
+    "audienceSize": 0,
+    "title": "Test Test Test",
+    "body": "[[var:top_target_shoe_name]] [[var:firstName]]",
+    "deepLink": "https://tradeblock.us/checkout/create-offer-ideas-list?shippingAddressId=5a87e21b-170c-4e80-8a27-5dd5120e65f8&paymentMethodId=pm_1H5MVOLWLZkaITmu4rQlmu4u&inboundInsurance=true&outboundInsurance=true&isTrustedTraderReview=false&askedCash=0&addedCash=0&step=offerIdeasList&type=PUBLIC&postAsPublic=true&isCheckout=false&receivingProductVariantIds%5B0%5D%5Bid%5D=7bb9acab-bfc0-4951-8b7d-2a27890e5dc9&receivingProductVariantIds%5B0%5D%5BproductVariantId%5D=[[var:top_target_shoe_variantid]]",
+    "dryRun": true
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "fnW4d9JxrEwEikoHmFumWw:APA91bESgR0TNXy3YqDMZCwFyOZOLdgnejHcR-fYndGIpwyjp7iS9uiar0S09EYKlKypNb2HkTGavj_gD9CLfLo1c5lNV7pJEw5eP7wsWzYXMAXYi60Ffhw"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-07-31T02:32:26.220Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-07-31T02:32:26.220Z"
+}

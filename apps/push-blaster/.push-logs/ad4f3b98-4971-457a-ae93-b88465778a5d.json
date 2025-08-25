@@ -1,0 +1,18 @@
+{
+  "jobId": "ad4f3b98-4971-457a-ae93-b88465778a5d",
+  "status": "failed",
+  "startTime": "2025-08-05T20:26:31.465Z",
+  "request": {
+    "audienceDescription": "CSV: recent-closet-adders_TEST_20250805_151304.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": true
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "CSV parsing failed to produce valid data."
+  },
+  "endTime": "2025-08-05T20:26:31.532Z"
+}

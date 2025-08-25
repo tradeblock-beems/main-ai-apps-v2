@@ -1,0 +1,33 @@
+{
+  "jobId": "853db449-d9df-4b20-8ef1-71bddeec6a59",
+  "status": "completed",
+  "startTime": "2025-08-05T21:38:21.971Z",
+  "request": {
+    "audienceDescription": "CSV: recent-closet-adders_TEST_20250805_154957.csv",
+    "audienceSize": 0,
+    "title": "📈  [[var:wishlist_count]] people want your shoe",
+    "body": "There's some folks looking for those [[var:product_name]]s you just added... \r\n\r\n👀 See who (and what's in their closets) →",
+    "deepLink": "https://tradeblock.us/product/collectors-want?productVariantId=[[var:variantID]]&conditionId=1d7b7572-bb87-44b4-8a99-81ddb8e5b692",
+    "dryRun": false
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "fnW4d9JxrEwEikoHmFumWw:APA91bESgR0TNXy3YqDMZCwFyOZOLdgnejHcR-fYndGIpwyjp7iS9uiar0S09EYKlKypNb2HkTGavj_gD9CLfLo1c5lNV7pJEw5eP7wsWzYXMAXYi60Ffhw"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-05T21:38:22.997Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-05T21:38:22.998Z"
+}

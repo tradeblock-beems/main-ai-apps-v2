@@ -1,0 +1,20 @@
+{
+  "jobId": "df8edecc-9b3a-4a28-aa24-1763567a53b9",
+  "status": "failed",
+  "startTime": "2025-08-19T22:10:39.534Z",
+  "request": {
+    "audienceDescription": "CSV: justme-hottest-shoes-trades.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": false,
+    "csvFileName": "justme-hottest-shoes-trades.csv",
+    "layerId": 3
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "Firebase Admin is not initialized. Please check your environment variables."
+  },
+  "endTime": "2025-08-19T22:10:41.966Z"
+}

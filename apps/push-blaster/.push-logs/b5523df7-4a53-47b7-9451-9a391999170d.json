@@ -1,0 +1,18 @@
+{
+  "jobId": "b5523df7-4a53-47b7-9451-9a391999170d",
+  "status": "failed",
+  "startTime": "2025-08-01T18:37:47.780Z",
+  "request": {
+    "audienceDescription": "CSV: audience_2025-08-01_master_part_1_of_10.csv",
+    "audienceSize": 0,
+    "title": "🔥 $15 trade fee? On ALL future trades?",
+    "body": "Yo [[var:firstName]]! From now on, your service fee is just $15 any time you trade with a Trusted Trader. Time to make a move on those [[var:top_target_shoe_name]]s... 👟👀",
+    "deepLink": "https://tradeblock.us/home/discover/offers",
+    "dryRun": true
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "CSV parsing failed to produce valid data."
+  },
+  "endTime": "2025-08-01T18:37:47.908Z"
+}

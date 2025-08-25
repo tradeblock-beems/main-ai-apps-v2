@@ -1,0 +1,13 @@
+{
+  "automationId": "cc4890ae-2938-410b-b70c-88dd420bdc7b",
+  "timestamp": "2025-08-20T04:38:40.777Z",
+  "action": "control",
+  "controlAction": "cancel",
+  "reason": "Cancelled by user from test interface",
+  "result": {
+    "success": false,
+    "executionId": "cc4890ae-2938-410b-b70c-88dd420bdc7b",
+    "status": "failed",
+    "message": "Automation not found or not scheduled"
+  }
+}

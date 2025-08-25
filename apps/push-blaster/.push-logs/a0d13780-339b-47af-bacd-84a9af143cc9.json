@@ -1,0 +1,33 @@
+{
+  "jobId": "a0d13780-339b-47af-bacd-84a9af143cc9",
+  "status": "completed",
+  "startTime": "2025-08-07T17:45:00.526Z",
+  "request": {
+    "audienceDescription": "CSV: test-audience_2025-07-30.csv",
+    "audienceSize": 0,
+    "title": "💰 Your fees just dropped 40%",
+    "body": "Your Trusted Trader status awaits! Lock it in and then let's see if we can't get you a pair of those [[var:top_target_shoe_name]]s  →",
+    "deepLink": "https://tradeblock.us/account/trusted-trader-status",
+    "dryRun": true
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "eZop86rYu0qMrN5-O-DbMB:APA91bE_fjU2EKRUuygpry00D8B03pD3R26gBUbXSIOR-zMgQLlNjhVF-yC39tpHYgFzoWyTH59xNPMD29TyGOxcbrSXmZdx0KZ3ApX1IB8QnPVxQe0BmPE"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-07T17:45:02.013Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-07T17:45:02.013Z"
+}

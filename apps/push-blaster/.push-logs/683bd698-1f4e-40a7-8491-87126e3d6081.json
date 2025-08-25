@@ -1,0 +1,35 @@
+{
+  "jobId": "683bd698-1f4e-40a7-8491-87126e3d6081",
+  "status": "completed",
+  "startTime": "2025-08-08T19:39:53.067Z",
+  "request": {
+    "audienceDescription": "CSV: justme-hottest-shoes-trades.csv",
+    "audienceSize": 0,
+    "title": "🧐 Did you mean to add...",
+    "body": "We saw you recently added the (OG) 2005 Undefeated x Air Jordan 4 Retro.\r\n\r\nDid you mean to add the (new) 2025 release? →",
+    "deepLink": "https://tradeblock.us/product/832b53d0-caae-409a-a7fb-7d2e86502eb4",
+    "dryRun": false,
+    "csvFileName": "justme-hottest-shoes-trades.csv",
+    "layerId": 4
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "eZop86rYu0qMrN5-O-DbMB:APA91bE_fjU2EKRUuygpry00D8B03pD3R26gBUbXSIOR-zMgQLlNjhVF-yC39tpHYgFzoWyTH59xNPMD29TyGOxcbrSXmZdx0KZ3ApX1IB8QnPVxQe0BmPE"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-08T19:39:53.770Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-08T19:39:53.771Z"
+}

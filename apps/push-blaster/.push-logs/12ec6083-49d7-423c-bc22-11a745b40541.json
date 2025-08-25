@@ -1,0 +1,35 @@
+{
+  "jobId": "12ec6083-49d7-423c-bc22-11a745b40541",
+  "status": "completed",
+  "startTime": "2025-08-16T12:40:11.602Z",
+  "request": {
+    "audienceDescription": "Manual: 0e54067c-4c0e-4e4a-8a23-a47661578059",
+    "audienceSize": 0,
+    "title": "Test Push",
+    "body": "Testing device tokens",
+    "deepLink": null,
+    "dryRun": true,
+    "csvFileName": null,
+    "layerId": 4
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "eZop86rYu0qMrN5-O-DbMB:APA91bE_fjU2EKRUuygpry00D8B03pD3R26gBUbXSIOR-zMgQLlNjhVF-yC39tpHYgFzoWyTH59xNPMD29TyGOxcbrSXmZdx0KZ3ApX1IB8QnPVxQe0BmPE"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-16T12:40:11.966Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-16T12:40:11.966Z"
+}

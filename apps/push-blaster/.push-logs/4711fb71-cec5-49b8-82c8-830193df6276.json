@@ -1,0 +1,20 @@
+{
+  "jobId": "4711fb71-cec5-49b8-82c8-830193df6276",
+  "status": "failed",
+  "startTime": "2025-08-15T02:01:49.705Z",
+  "request": {
+    "audienceDescription": "CSV: automation_358676a1-8aa8-405d-9332-580b49e30421_1.csv",
+    "audienceSize": 0,
+    "title": "🎯 The target: [[var:product_name]]s 👟",
+    "body": "We saw the offer you made — why not shoot a few more shots?\r\n\r\nSee the [[var:inventory_count]] people who have them →",
+    "deepLink": "https://tradeblock.us/product/collectors-have?productVariantId=[[var:variantID]]&conditionId=1d7b7572-bb87-44b4-8a99-81ddb8e5b692",
+    "dryRun": false,
+    "csvFileName": "automation_358676a1-8aa8-405d-9332-580b49e30421_1.csv",
+    "layerId": 3
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "CSV parsing errors: Unable to auto-detect delimiting character; defaulted to ','"
+  },
+  "endTime": "2025-08-15T02:01:49.773Z"
+}

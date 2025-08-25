@@ -1,0 +1,20 @@
+{
+  "jobId": "cc014171-949e-4868-b362-3fe3a1929cc3",
+  "status": "failed",
+  "startTime": "2025-08-08T19:40:48.580Z",
+  "request": {
+    "audienceDescription": "CSV: users_who_added_product_1bf47fb6-52ea-4be1-9c86-43d6310ea02e_last_30days.csv",
+    "audienceSize": 0,
+    "title": "🧐 Did you mean to add...",
+    "body": "We saw you recently added the (OG) 2005 Undefeated x Air Jordan 4 Retro.\r\n\r\nDid you mean to add the (new) 2025 release? →",
+    "deepLink": "https://tradeblock.us/product/832b53d0-caae-409a-a7fb-7d2e86502eb4",
+    "dryRun": true,
+    "csvFileName": "users_who_added_product_1bf47fb6-52ea-4be1-9c86-43d6310ea02e_last_30days.csv",
+    "layerId": 1
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "CSV parsing errors: Unable to auto-detect delimiting character; defaulted to ','"
+  },
+  "endTime": "2025-08-08T19:40:48.734Z"
+}

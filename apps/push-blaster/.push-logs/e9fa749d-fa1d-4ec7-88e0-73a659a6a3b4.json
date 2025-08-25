@@ -1,0 +1,15 @@
+{
+  "jobId": "e9fa749d-fa1d-4ec7-88e0-73a659a6a3b4",
+  "status": "in_progress",
+  "startTime": "2025-08-07T15:54:08.459Z",
+  "request": {
+    "audienceDescription": "CSV: test-audience_2025-07-30.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": true
+  },
+  "batches": [],
+  "summary": {}
+}

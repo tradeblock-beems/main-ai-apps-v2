@@ -1,0 +1,33 @@
+{
+  "jobId": "e641b950-ca42-4e4d-87f8-f5669a98cac4",
+  "status": "completed",
+  "startTime": "2025-08-05T22:01:02.755Z",
+  "request": {
+    "audienceDescription": "CSV: recent-offer-creators_TEST_20250805_154957.csv",
+    "audienceSize": 0,
+    "title": "🎯 Target acquired: [[var:product_name]]👟",
+    "body": "We saw you shooting your shot so we generated a few more offers for you. \r\n\r\nPost what you like, ignore what you don't →",
+    "deepLink": "https://tradeblock.us/checkout/create-offer-ideas-list?shippingAddressId=5a87e21b-170c-4e80-8a27-5dd5120e65f8&paymentMethodId=pm_1H5MVOLWLZkaITmu4rQlmu4u&inboundInsurance=true&outboundInsurance=true&isTrustedTraderReview=false&askedCash=0&addedCash=0&step=offerIdeasList&type=PUBLIC&postAsPublic=true&isCheckout=false&receivingProductVariantIds%5B0%5D%5Bid%5D=7bb9acab-bfc0-4951-8b7d-2a27890e5dc9&receivingProductVariantIds%5B0%5D%5BproductVariantId%5D=[[var:variantID]]",
+    "dryRun": false
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "fnW4d9JxrEwEikoHmFumWw:APA91bESgR0TNXy3YqDMZCwFyOZOLdgnejHcR-fYndGIpwyjp7iS9uiar0S09EYKlKypNb2HkTGavj_gD9CLfLo1c5lNV7pJEw5eP7wsWzYXMAXYi60Ffhw"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-05T22:01:03.307Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-05T22:01:03.310Z"
+}

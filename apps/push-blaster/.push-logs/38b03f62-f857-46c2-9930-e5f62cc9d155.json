@@ -1,0 +1,35 @@
+{
+  "jobId": "38b03f62-f857-46c2-9930-e5f62cc9d155",
+  "status": "completed",
+  "startTime": "2025-08-16T15:00:44.136Z",
+  "request": {
+    "audienceDescription": "CSV: justme-hottest-shoes-trades.csv",
+    "audienceSize": 0,
+    "title": "The Nigel 1 Lows are taking off 🚀",
+    "body": "Took an L on the drop this morning? 👀\r\n\r\nTrade for them on the block →",
+    "deepLink": "https://tradeblock.us/product/dafb5a29-fa22-4d39-8ccd-871afb7a0976",
+    "dryRun": false,
+    "csvFileName": "justme-hottest-shoes-trades.csv",
+    "layerId": 4
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "eZop86rYu0qMrN5-O-DbMB:APA91bE_fjU2EKRUuygpry00D8B03pD3R26gBUbXSIOR-zMgQLlNjhVF-yC39tpHYgFzoWyTH59xNPMD29TyGOxcbrSXmZdx0KZ3ApX1IB8QnPVxQe0BmPE"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-16T15:00:44.737Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-16T15:00:44.738Z"
+}

@@ -1,0 +1,35 @@
+{
+  "jobId": "52f8e0a5-527f-46f1-8211-d72cc6e0c3ca",
+  "status": "completed",
+  "startTime": "2025-08-19T22:13:34.515Z",
+  "request": {
+    "audienceDescription": "CSV: justme-hottest-shoes-trades.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": true,
+    "csvFileName": "justme-hottest-shoes-trades.csv",
+    "layerId": 3
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "eZop86rYu0qMrN5-O-DbMB:APA91bE_fjU2EKRUuygpry00D8B03pD3R26gBUbXSIOR-zMgQLlNjhVF-yC39tpHYgFzoWyTH59xNPMD29TyGOxcbrSXmZdx0KZ3ApX1IB8QnPVxQe0BmPE"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-19T22:13:36.358Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-19T22:13:36.358Z"
+}

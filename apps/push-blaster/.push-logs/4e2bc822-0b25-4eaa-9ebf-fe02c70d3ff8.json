@@ -1,0 +1,18 @@
+{
+  "jobId": "4e2bc822-0b25-4eaa-9ebf-fe02c70d3ff8",
+  "status": "failed",
+  "startTime": "2025-08-07T06:01:46.172Z",
+  "request": {
+    "audienceDescription": "CSV: test-audience_2025-07-30.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": false
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "formData is not defined"
+  },
+  "endTime": "2025-08-07T06:01:46.299Z"
+}

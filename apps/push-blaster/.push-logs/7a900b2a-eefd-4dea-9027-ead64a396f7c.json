@@ -1,0 +1,17 @@
+{
+  "jobId": "7a900b2a-eefd-4dea-9027-ead64a396f7c",
+  "status": "in_progress",
+  "startTime": "2025-08-19T22:14:07.394Z",
+  "request": {
+    "audienceDescription": "CSV: justme-hottest-shoes-trades.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": false,
+    "csvFileName": "justme-hottest-shoes-trades.csv",
+    "layerId": 3
+  },
+  "batches": [],
+  "summary": {}
+}

@@ -1,0 +1,20 @@
+{
+  "jobId": "c45fbba9-d92d-4f77-bd08-4dbc8383230e",
+  "status": "failed",
+  "startTime": "2025-08-15T19:31:18.871Z",
+  "request": {
+    "audienceDescription": "CSV: trending-closet-items-top1_TEST_20250815_141042.csv",
+    "audienceSize": 0,
+    "title": "🔥 You own this week's HOTTEST shoe",
+    "body": "Your [[var:product_name]]s are the #1 most targeted shoe on the block. \r\n\r\nSee [[var:variant_open_offers]] trades you can claim right now → ",
+    "deepLink": "https://tradeblock.us/product/offers-to-trade?productVariantId=[[var:variantID]]",
+    "dryRun": false,
+    "csvFileName": "trending-closet-items-top1_TEST_20250815_141042.csv",
+    "layerId": 4
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "Failed to fetch device tokens"
+  },
+  "endTime": "2025-08-15T19:31:19.010Z"
+}

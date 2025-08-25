@@ -1,0 +1,249 @@
+# Action: Comprehensive Code Review and Documentation
+
+**Purpose:** Create concise-yet-detailed architectural guides to enable rapid problem-solving while preventing dependency breakage and knowledge loss.
+
+## 🎯 When to Use This Action
+
+- **Before major feature development** - Ensure understanding of existing architecture
+- **After significant system changes** - Update architectural knowledge and dependencies  
+- **When debugging complex issues** - Create reference documentation for future similar problems
+- **During agent onboarding** - Establish comprehensive system understanding
+- **When "tribal knowledge" exists** - Capture undocumented system behaviors and patterns
+
+## 🔍 Core Methodology: 3-Pass Analysis
+
+### Pass 1: Architectural Discovery
+**Goal:** Build comprehensive mental model of the system
+
+**Process:**
+1. **Identify Core Components**
+   - Start with main entry points (API routes, main classes, primary functions)
+   - Map component relationships and data flow
+   - Document primary responsibilities of each component
+
+2. **Trace Execution Flows**
+   - Follow complete user journeys from trigger to completion
+   - Map data transformations and state changes
+   - Identify integration points with external systems
+
+3. **Catalog Dependencies**
+   - Import/export relationships between modules
+   - External service dependencies (APIs, databases, third-party tools)
+   - Configuration and environment dependencies
+   - File system dependencies (logs, storage, temp files)
+
+**Tools to Use:**
+- `read_file` with systematic coverage (100-200 line chunks)
+- `codebase_search` for architectural patterns and component discovery
+- `grep` for dependency mapping and import tracing
+
+### Pass 2: Gap Analysis and Risk Assessment
+**Goal:** Identify missing pieces and potential failure points
+
+**Process:**
+1. **Review Pass 1 Documentation**
+   - Look for logical gaps in the execution flow
+   - Identify components mentioned but not fully analyzed
+   - Check for incomplete dependency mappings
+
+2. **Deep Dive on Critical Paths**
+   - Focus on complex business logic and state management
+   - Analyze error handling and failure scenarios
+   - Review timing-sensitive operations and race condition potential
+
+3. **Investigate Integration Boundaries**
+   - API contracts and data formats
+   - Service-to-service communication patterns
+   - Shared state and potential conflicts
+
+**Focus Areas:**
+- Error handling and recovery mechanisms
+- Timing and scheduling logic
+- State management and persistence
+- Security and authorization flows
+- Performance bottlenecks and scalability concerns
+
+### Pass 3: Synthesis and Optimization
+**Goal:** Create actionable, reference-quality documentation
+
+**Process:**
+1. **Consolidate Findings**
+   - Merge Pass 1 and Pass 2 insights
+   - Resolve contradictions and clarify ambiguities
+   - Organize by logical component groupings
+
+2. **Add Operational Knowledge**
+   - Debugging strategies and common failure patterns
+   - Configuration requirements and environment setup
+   - Monitoring and observability guidance
+
+3. **Create Decision Frameworks**
+   - "When to modify X vs Y" guidance
+   - Dependency impact assessment checklists
+   - Safe change protocols and testing strategies
+
+## 📋 Documentation Structure Template
+
+```markdown
+# [System Name] - Architecture & Dependencies
+
+## 🏗️ System Overview
+- Purpose and core functionality
+- Integration with broader ecosystem
+- Key design principles and constraints
+
+## 📋 Core Components
+### [Component Name]
+- **Primary Role**: Brief description
+- **Key Responsibilities**: Bullet list
+- **Critical Methods**: Most important functions
+- **Dependencies**: What it imports/calls
+- **Dependents**: What calls it
+
+## 🔄 Execution Flows
+### [Primary Flow Name]
+- Step-by-step process description
+- Data transformations at each step
+- Decision points and branching logic
+- Error handling and recovery paths
+
+## 🧩 Integration Points
+- External service dependencies
+- API contracts and data formats
+- Shared resources and potential conflicts
+
+## 📊 Data Flow
+- Input sources and formats
+- Processing stages and transformations
+- Output destinations and persistence
+
+## 🔍 API Endpoints / Public Interfaces
+- Route definitions and parameters
+- Request/response formats
+- Authentication and authorization
+
+## ⚠️ Known Issues & Risk Areas
+- Current bugs with root cause analysis
+- Performance bottlenecks
+- Security considerations
+- Race conditions and timing issues
+
+## 📋 Detailed Component Dependencies
+- Import/export mapping
+- Cross-service communication
+- Configuration and environment requirements
+
+## 🛡️ Safe Change Protocols
+- Pre-change review checklist
+- Impact assessment procedures
+- Testing requirements
+- Rollback strategies
+
+## 🔧 Configuration & Settings
+- Environment variables and their purposes
+- File system layout and permissions
+- External service configuration
+
+## 📊 Monitoring & Debugging
+- Log locations and formats
+- Performance metrics and monitoring
+- Common debugging procedures
+- Troubleshooting decision trees
+```
+
+## 🛡️ Critical Success Factors
+
+### Completeness Over Speed
+- **Read entire critical files**, not just snippets
+- **Follow every major execution path** to completion
+- **Map all significant dependencies**, not just obvious ones
+- **Document edge cases and error scenarios**
+
+### Dependency-Aware Analysis
+- **Never analyze components in isolation** - always consider their dependencies
+- **Map bidirectional relationships** - what calls what, and what gets called by what
+- **Identify shared resources** - databases, files, global state, external services
+- **Document timing dependencies** - sequence requirements, race conditions
+
+### Operational Perspective
+- **Think like a debugger** - what information would help solve problems quickly?
+- **Think like a maintainer** - what context prevents breaking changes?
+- **Think like an onboarding agent** - what knowledge prevents common mistakes?
+- **Think like a deployer** - what configuration and environment details are critical?
+
+## 🔍 Key Investigation Patterns
+
+### Follow the Data
+```
+Input Source → Processing Steps → Transformations → Storage → Output
+```
+
+### Trace the Control Flow
+```
+Trigger → Validation → Business Logic → Side Effects → Response
+```
+
+### Map the Dependencies
+```
+Component → Direct Dependencies → Transitive Dependencies → External Dependencies
+```
+
+### Analyze the State
+```
+Creation → Mutation → Persistence → Retrieval → Cleanup
+```
+
+## 🚨 Red Flags to Investigate
+
+### Architectural Smells
+- **Multiple components doing similar things** - potential duplication or unclear boundaries
+- **Circular dependencies** - components that import each other
+- **God objects** - components with too many responsibilities
+- **Tight coupling** - components that know too much about each other's internals
+
+### Operational Risks
+- **Undocumented configuration** - environment variables or settings without clear purpose
+- **Silent failures** - error conditions that don't provide clear debugging information
+- **Race conditions** - timing-dependent behavior that could fail under different conditions
+- **Resource leaks** - unclosed files, connections, or memory allocations
+
+### Knowledge Gaps
+- **Magic numbers** - hardcoded values without explanation
+- **Implicit assumptions** - behavior that depends on undocumented environmental factors
+- **Legacy workarounds** - code that exists to fix problems that may no longer exist
+- **Tribal knowledge** - critical information that exists only in developers' heads
+
+## 📚 Documentation Maintenance
+
+### Keep Current
+- **Update documentation immediately** when making architectural changes
+- **Version the documentation** to track evolution over time
+- **Cross-reference with code changes** to ensure consistency
+
+### Make Discoverable
+- **Link from main README** or development documentation
+- **Reference in code comments** for complex sections
+- **Include in onboarding checklists** for new team members
+
+### Validate Regularly
+- **Test documentation accuracy** by following procedures exactly as written
+- **Gather feedback** from developers using the documentation
+- **Update based on real debugging experiences** and problem patterns
+
+## 🎯 Success Metrics
+
+### Documentation Quality
+- **Can a new developer understand the system** from the documentation alone?
+- **Can debugging proceed efficiently** without extensive code exploration?
+- **Are dependency impacts predictable** before making changes?
+- **Is the documentation comprehensive enough** to prevent common mistakes?
+
+### Operational Impact
+- **Reduced time to resolve issues** - faster debugging and problem identification
+- **Fewer regression bugs** - better understanding prevents accidental breakage
+- **More confident changes** - clear understanding of impact scope
+- **Better system evolution** - architectural decisions informed by complete understanding
+
+---
+
+**Remember: The goal is not perfect documentation, but actionable knowledge that prevents problems and accelerates solutions. Focus on what developers need to know to work effectively and safely within the system.**

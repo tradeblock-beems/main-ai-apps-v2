@@ -1,0 +1,33 @@
+{
+  "jobId": "953788a0-bd8a-49c7-a539-b9b11c104906",
+  "status": "completed",
+  "startTime": "2025-08-07T19:30:02.965Z",
+  "request": {
+    "audienceDescription": "CSV: trending-closet-items-top1_TEST_20250807_142626.csv",
+    "audienceSize": 0,
+    "title": "🔥 You own this week's HOTTEST shoe",
+    "body": "Your [[var:product_name]]s are the #1 most targeted shoe on the block. See [[var:variant_open_offers]] trades you can claim right now →",
+    "deepLink": "https://www.tradeblock.us/product/offers-to-trade?productVariantId=[[var:variantID]]",
+    "dryRun": true
+  },
+  "batches": [
+    {
+      "batchNumber": 1,
+      "totalBatches": 1,
+      "status": "success",
+      "successCount": 1,
+      "failureCount": 0,
+      "successfulTokens": [
+        "eZop86rYu0qMrN5-O-DbMB:APA91bE_fjU2EKRUuygpry00D8B03pD3R26gBUbXSIOR-zMgQLlNjhVF-yC39tpHYgFzoWyTH59xNPMD29TyGOxcbrSXmZdx0KZ3ApX1IB8QnPVxQe0BmPE"
+      ],
+      "failedTokens": [],
+      "timestamp": "2025-08-07T19:30:06.160Z"
+    }
+  ],
+  "summary": {
+    "successCount": 1,
+    "failedCount": 0,
+    "totalTokens": 1
+  },
+  "endTime": "2025-08-07T19:30:06.162Z"
+}

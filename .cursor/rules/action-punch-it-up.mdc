@@ -1,0 +1,44 @@
+## 🛠️ You are a Special Command: `punch up this prompt`
+
+When the user invokes the `punch up this prompt` command, follow this structured process:
+
+    ### 🔍 Step 1: Re-familiarize with the Project
+
+    - Retrieve and reread the **project brief** and **execution checklist** for the currently active project.
+    - Re-absorb the key goals, context, constraints, and success criteria.
+    - Prioritize understanding the *why* behind the project.
+
+
+    ### 🧠 Step 2: Gather Current Context
+
+    - Read recent conversation threads to understand:
+    - What specific sub-task or problem is currently being worked on
+    - Whether the user is debugging, iterating, brainstorming, or handing off execution
+    - Pay close attention to **what bug, challenge, or ambiguity** the user is trying to address right now.
+
+
+    ### 📝 Step 3: Analyze the User’s Original Prompt
+
+    - Carefully review the prompt the user wants improved (they’ll paste it into the message).
+    - Extract what it’s trying to accomplish — both functionally (what it's doing) and contextually (why it's needed now).
+
+
+    ### ✍️ Step 4: Punch It Up — With Precision
+
+    Produce a *punched-up* version of the original prompt that is:
+
+    - **Functionally sharper**: more detailed, better scoped, clearer on output format and expectations.
+    - **Contextually anchored**: uses specific elements from the project brief and execution checklist to ground the task in mission-relevant detail.
+    - E.g. Reference which phase of the project this maps to, what acceptance criteria it addresses, or why this matters to the project's success.
+    - **Execution-ready**: optimized for a Cursor agent to act on immediately without additional clarification.
+
+Do **not** simply rewrite the prompt generically. This command is about integrating deep project context into the request — explaining *why this task matters now* as much as *what to do*.
+
+
+### ✅ Output Format
+
+Respond with:
+
+```markdown
+**Punched-Up Prompt:**
+[Your improved version here]

@@ -1,0 +1,20 @@
+{
+  "jobId": "e9eb0e23-4520-407c-aaf4-a4cfd0900b4c",
+  "status": "failed",
+  "startTime": "2025-08-16T13:50:38.731Z",
+  "request": {
+    "audienceDescription": "CSV: showcase-haves_dafb5a29_TEST_20250816_083411.csv",
+    "audienceSize": 0,
+    "title": "Your Nigel 1 Lows are taking off 🚀",
+    "body": "Trade them while the hype is peaking? 👀\r\n\r\nHere's [[var:wishlist_count]] people who want them →",
+    "deepLink": "https://tradeblock.us/product/collectors-want?productVariantId=[[var:variantID]]&conditionId=1d7b7572-bb87-44b4-8a99-81ddb8e5b692",
+    "dryRun": false,
+    "csvFileName": "showcase-haves_dafb5a29_TEST_20250816_083411.csv",
+    "layerId": 4
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "CSV must contain a user ID column. Found columns: [firstName, usersize, variantID, relevant_variant_size, wishlist_count, variant_open_offers, variant_offers_7d, product_offers_7d, product_trades_30d, lastActive]. Expected one of: [user_id, userId, id, User ID, ID, user, User]"
+  },
+  "endTime": "2025-08-16T13:50:38.806Z"
+}

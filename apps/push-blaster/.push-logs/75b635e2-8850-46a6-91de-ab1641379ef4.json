@@ -1,0 +1,18 @@
+{
+  "jobId": "75b635e2-8850-46a6-91de-ab1641379ef4",
+  "status": "failed",
+  "startTime": "2025-08-07T06:08:17.222Z",
+  "request": {
+    "audienceDescription": "CSV: test-audience_2025-07-30.csv",
+    "audienceSize": 0,
+    "title": "test",
+    "body": "test",
+    "deepLink": null,
+    "dryRun": false
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "rawFormData is not defined"
+  },
+  "endTime": "2025-08-07T06:08:17.443Z"
+}

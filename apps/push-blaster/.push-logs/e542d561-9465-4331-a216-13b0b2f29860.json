@@ -1,0 +1,17 @@
+{
+  "jobId": "e542d561-9465-4331-a216-13b0b2f29860",
+  "status": "in_progress",
+  "startTime": "2025-08-16T05:55:41.470Z",
+  "request": {
+    "audienceDescription": "Manual: null",
+    "audienceSize": 0,
+    "title": "Test Layer 0",
+    "body": "Testing Layer 0 support",
+    "deepLink": null,
+    "dryRun": true,
+    "csvFileName": null,
+    "layerId": 0
+  },
+  "batches": [],
+  "summary": {}
+}

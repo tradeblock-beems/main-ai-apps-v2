@@ -1,0 +1,17 @@
+{
+  "jobId": "68f2305e-d69c-4c46-9e26-21f667993045",
+  "status": "in_progress",
+  "startTime": "2025-08-18T15:04:21.868Z",
+  "request": {
+    "audienceDescription": "Manual: null",
+    "audienceSize": 0,
+    "title": "Safety Test",
+    "body": "This should fail",
+    "deepLink": null,
+    "dryRun": true,
+    "csvFileName": null,
+    "layerId": 4
+  },
+  "batches": [],
+  "summary": {}
+}

@@ -1,0 +1,17 @@
+{
+  "jobId": "8c53dcae-d8ab-4be0-941e-e7a59f2a39ed",
+  "status": "in_progress",
+  "startTime": "2025-08-14T22:58:22.572Z",
+  "request": {
+    "audienceDescription": "Manual: null",
+    "audienceSize": 0,
+    "title": null,
+    "body": null,
+    "deepLink": "https://tradeblock.us/product/collectors-have?productVariantId=[[var:variantID]]&conditionId=1d7b7572-bb87-44b4-8a99-81ddb8e5b692",
+    "dryRun": false,
+    "csvFileName": null,
+    "layerId": 3
+  },
+  "batches": [],
+  "summary": {}
+}

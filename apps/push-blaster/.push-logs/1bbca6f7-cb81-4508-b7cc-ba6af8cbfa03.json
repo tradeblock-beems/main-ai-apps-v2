@@ -1,0 +1,18 @@
+{
+  "jobId": "1bbca6f7-cb81-4508-b7cc-ba6af8cbfa03",
+  "status": "failed",
+  "startTime": "2025-08-05T20:25:40.023Z",
+  "request": {
+    "audienceDescription": "CSV: recent-closet-adders_TEST_20250805_151304.csv",
+    "audienceSize": 0,
+    "title": "👀 These people want your shoe",
+    "body": "[[var:wishlist_count]] users want those [[var:product_name]]s you just added. See who's on the list →",
+    "deepLink": "https://tradeblock.us/product/collectors-want?productVariantId=[[var:variantID]]&conditionId=1d7b7572-bb87-44b4-8a99-81ddb8e5b692",
+    "dryRun": true
+  },
+  "batches": [],
+  "summary": {
+    "errorMessage": "CSV parsing failed to produce valid data."
+  },
+  "endTime": "2025-08-05T20:25:40.089Z"
+}
