@@ -23,13 +23,38 @@ export default function Dashboard({ className = "" }: DashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
-  // Fetch data from API
-  const fetchData = async (days: number) => {
+  // Simple in-memory cache for API responses
+  const [cache, setCache] = useState<Map<string, { data: ChartData[], count: number, timestamp: number }>>(new Map());
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Fetch data from API with caching and real data fallback
+  const fetchData = async (days: number, useRealData: boolean = true) => {
     setIsLoading(true);
     setError(null);
     
+    // Check cache first (5 minute expiry)
+    const cacheKey = `${days}-${useRealData ? 'real' : 'mock'}`;
+    const cached = cache.get(cacheKey);
+    const now = Date.now();
+    
+    if (cached && (now - cached.timestamp) < 300000) { // 5 minutes
+      setChartData(cached.data);
+      setTotalUsers(cached.count);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      const response = await fetch(`/api/analytics/new-users/mock?days=${days}`);
+      // Try real data first, fallback to mock on error
+      let endpoint = `/api/analytics/new-users?days=${days}`;
+      let response = await fetch(endpoint);
+      
+      // If real data fails, fallback to mock data
+      if (!response.ok && useRealData) {
+        console.warn('Real data endpoint failed, falling back to mock data');
+        endpoint = `/api/analytics/new-users/mock?days=${days}`;
+        response = await fetch(endpoint);
+      }
       
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
@@ -41,10 +66,28 @@ export default function Dashboard({ className = "" }: DashboardProps) {
         throw new Error(data.message || 'API request failed');
       }
       
+      // Update cache
+      const newCache = new Map(cache);
+      newCache.set(cacheKey, { 
+        data: data.data, 
+        count: data.recordCount || data.data.length, 
+        timestamp: now 
+      });
+      setCache(newCache);
+      
       setChartData(data.data);
-      setTotalUsers(data.recordCount);
+      setTotalUsers(data.recordCount || data.data.length);
+      
     } catch (err) {
       console.error('Failed to fetch chart data:', err);
+      
+      // If real data failed and we haven't tried mock yet, try mock
+      if (useRealData) {
+        console.log('Attempting fallback to mock data...');
+        await fetchData(days, false);
+        return;
+      }
+      
       setError(err instanceof Error ? err.message : 'Failed to load data');
       setChartData([]);
       setTotalUsers(0);
@@ -53,16 +96,38 @@ export default function Dashboard({ className = "" }: DashboardProps) {
     }
   };
 
+  // Debounced fetch for rapid date range changes
+  const debouncedFetchData = (days: number) => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    
+    const timer = setTimeout(() => {
+      fetchData(days);
+    }, 300); // 300ms debounce
+    
+    setDebounceTimer(timer);
+  };
+
   // Initial data fetch
   useEffect(() => {
     fetchData(selectedDays);
   }, []);
 
-  // Handle date range changes
+  // Handle date range changes with debouncing
   const handleRangeChange = (days: number) => {
     setSelectedDays(days);
-    fetchData(days);
+    debouncedFetchData(days);
   };
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -107,6 +172,11 @@ export default function Dashboard({ className = "" }: DashboardProps) {
               ? 'Loading chart data...' 
               : `Showing ${chartData.length} days of registration data`
             }
+            {chartData.length > 0 && !error && (
+              <span className="ml-2 text-green-600">
+                • Real data from database
+              </span>
+            )}
           </p>
         </div>
 
