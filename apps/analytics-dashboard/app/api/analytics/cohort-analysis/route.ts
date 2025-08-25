@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     // Validate months parameter
     let periods = 12; // Default for monthly
     if (queryParams.period === 'weekly') {
-      periods = 24; // Default for weekly (~6 months)
+      periods = 18; // Default for weekly (~4.5 months)
     }
     
     if (queryParams.months) {

@@ -82,14 +82,14 @@ export async function getNewUsersByDay(
   
   const query = `
     SELECT 
-      DATE(created_at) as date,
+      DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') as date,
       COUNT(*) as count
     FROM users 
     WHERE created_at >= $1::date 
     AND created_at < ($2::date + INTERVAL '1 day')
     AND created_at >= '2025-03-05'
     AND deleted_at = 0
-    GROUP BY DATE(created_at)
+    GROUP BY DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')
     ORDER BY date ASC
   `;
   
@@ -216,7 +216,8 @@ export async function getCohortAnalysis(
       all_actions_count,
       all_actions_percentage
     FROM cohort_summary
-    ORDER BY cohort_month ASC
+    ORDER BY cohort_month DESC
+    LIMIT $1
   ` : `
     WITH weekly_cohorts AS (
       -- Group users by week joined (starting March 2025)
@@ -282,7 +283,7 @@ export async function getCohortAnalysis(
     )
     SELECT 
       cohort_week as cohort_month,
-      TO_CHAR(cohort_week, 'YYYY-"W"WW') as cohort_period,
+      'week-of-' || TO_CHAR(cohort_week, 'MMDDYY') as cohort_period,
       total_users,
       closet_add_count,
       closet_add_percentage,
@@ -293,11 +294,12 @@ export async function getCohortAnalysis(
       all_actions_count,
       all_actions_percentage
     FROM cohort_summary
-    ORDER BY cohort_week ASC
+    ORDER BY cohort_week DESC
+    LIMIT $1
   `;
 
-  const result = await executeQuery(query);
-  return result.rows;
+  const result = await executeQuery(query, [periods]);
+  return result.rows.reverse(); // Reverse to get chronological order (oldest first)
 }
 
 // Graceful pool shutdown for application cleanup

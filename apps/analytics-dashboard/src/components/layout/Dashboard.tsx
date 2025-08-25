@@ -144,7 +144,7 @@ export default function Dashboard({ className = "" }: DashboardProps) {
     }
     
     try {
-      const periods = periodType === 'monthly' ? 12 : 24; // 12 months or 24 weeks
+      const periods = periodType === 'monthly' ? 12 : 18; // 12 months or 18 weeks
       const endpoint = `/api/analytics/cohort-analysis?period=${periodType}&months=${periods}`;
       const response = await fetch(endpoint);
       
@@ -208,6 +208,17 @@ export default function Dashboard({ className = "" }: DashboardProps) {
     debouncedFetchCohortData(period);
   };
 
+  // Force refresh data (bypass cache)
+  const refreshDailyUsers = () => {
+    setCache(new Map()); // Clear cache
+    fetchData(selectedDays);
+  };
+
+  const refreshCohortData = () => {
+    setCohortCache(new Map()); // Clear cache
+    fetchCohortData(selectedPeriod);
+  };
+
   // Cleanup debounce timers on unmount
   useEffect(() => {
     return () => {
@@ -243,11 +254,25 @@ export default function Dashboard({ className = "" }: DashboardProps) {
               </div>
             </div>
             
-            {/* Date Range Toggle */}
-            <DateRangeToggle
-              selectedDays={selectedDays}
-              onRangeChange={handleRangeChange}
-            />
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Date Range Toggle */}
+              <DateRangeToggle
+                selectedDays={selectedDays}
+                onRangeChange={handleRangeChange}
+              />
+              
+              {/* Refresh Button */}
+              <button
+                onClick={refreshDailyUsers}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -364,6 +389,18 @@ export default function Dashboard({ className = "" }: DashboardProps) {
               selectedPeriod={selectedPeriod}
               onPeriodChange={handlePeriodChange}
             />
+            
+            {/* Refresh Button */}
+            <button
+              onClick={refreshCohortData}
+              disabled={cohortLoading}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
           </div>
         </div>
 

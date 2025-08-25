@@ -4,9 +4,9 @@
 
 ### What Users See & Do → How Code Delivers It
 
-**User Journey**: Visit `localhost:3003` → See analytics dashboard → Click date range buttons → Watch chart update with new data
+**User Journey**: Visit `localhost:3003` → See analytics dashboard with dual charts → Click date range buttons → Watch daily users chart update → Toggle monthly/weekly cohorts → Watch cohort analysis chart update with new data
 
-**Code Journey**: `page.tsx` → `Dashboard.tsx` → API fetch → PostgreSQL query → D3.js rendering
+**Code Journey**: `page.tsx` → `Dashboard.tsx` → Multiple API fetches → PostgreSQL queries → D3.js rendering for both charts
 
 ---
 
@@ -26,11 +26,25 @@
 - 300ms debouncing prevents API spam during rapid clicks
 - 5-minute cache avoids redundant database queries
 
-### 3. **See Performance Indicators**
-**User Expectation**: Green "Real data from database" badge confirms live data  
+### 3. **Analyze Cohort Performance**
+**User Expectation**: See cohort analysis showing 72-hour completion rates for key actions  
 **Code Implementation**:
-- API tries real endpoint first, falls back to mock on failure
-- UI conditionally shows green indicator when `chartData.length > 0 && !error`
+- `Dashboard.tsx` fetches `/api/analytics/cohort-analysis?period=monthly&months=12`
+- `route.ts` executes `getCohortAnalysis()` with complex SQL JOINs and 72-hour window calculations
+- `CohortAnalysisChart.tsx` renders D3.js grouped bar chart with action-based grouping
+
+### 4. **Toggle Cohort Periods**
+**User Expectation**: Switch between monthly and weekly cohort views  
+**Code Implementation**:
+- `CohortPeriodToggle.tsx` triggers `handlePeriodChange(period)`
+- 300ms debouncing prevents API spam during rapid toggles
+- 15-minute cache avoids redundant database queries for analytical data
+
+### 5. **See Performance Indicators**
+**User Expectation**: Green "Real data from database" badges confirm live data  
+**Code Implementation**:
+- Both APIs connect directly to PostgreSQL with health checks
+- UI conditionally shows green indicators when `data.length > 0 && !error`
 
 ---
 
@@ -38,10 +52,12 @@
 
 ### **Layer 1: User Interface (React + D3.js)**
 ```
-Dashboard.tsx (State Management)
-├── DateRangeToggle.tsx (User Input)
-├── NewUsersBarChart.tsx (D3.js Visualization)
-└── Loading/Error States (UX Feedback)
+Dashboard.tsx (Dual Chart State Management)
+├── DateRangeToggle.tsx (Daily Users Input)
+├── NewUsersBarChart.tsx (D3.js Daily Visualization)
+├── CohortPeriodToggle.tsx (Cohort Analysis Input)
+├── CohortAnalysisChart.tsx (D3.js Grouped Bar Visualization)
+└── Loading/Error States (UX Feedback for Both Charts)
 ```
 
 **Breaking Change Risk**: Changes to React hooks, D3.js integration patterns, or component props  
@@ -49,8 +65,9 @@ Dashboard.tsx (State Management)
 
 ### **Layer 2: API Routes (Next.js App Router)**
 ```
-app/api/analytics/new-users/route.ts (Real Data)
-app/api/analytics/new-users/mock/route.ts (Fallback)
+app/api/analytics/new-users/route.ts (Daily Users - Real Data)
+app/api/analytics/new-users/mock/route.ts (Daily Users - Fallback)
+app/api/analytics/cohort-analysis/route.ts (Cohort Analysis - Real Data Only)
 ```
 
 **Breaking Change Risk**: URL structure changes, response format changes, parameter validation  
@@ -58,8 +75,11 @@ app/api/analytics/new-users/mock/route.ts (Fallback)
 
 ### **Layer 3: Database Integration (PostgreSQL)**
 ```
-src/lib/db.ts (Connection Pool)
-src/lib/config.ts (Environment)
+src/lib/db.ts (Connection Pool + Query Functions)
+├── getNewUsersByDay() - Daily aggregation queries
+├── getCohortAnalysis() - Complex cohort calculations with 72-hour windows
+└── checkDatabaseConnection() - Health monitoring
+src/lib/config.ts (Environment Variables)
 ```
 
 **Breaking Change Risk**: Database schema changes, connection config, query syntax  
@@ -68,6 +88,9 @@ src/lib/config.ts (Environment)
 ### **Layer 4: Type Safety (TypeScript)**
 ```
 src/types/analytics.ts (Interface Definitions)
+├── ChartData, ApiResponse<T> - Daily users interfaces
+├── CohortData, CohortAnalysisResponse - Cohort analysis interfaces
+└── CohortPeriodType, CohortActionMetrics - Cohort-specific types
 ```
 
 **Breaking Change Risk**: Interface mismatches between API responses and component expectations  
@@ -77,21 +100,29 @@ src/types/analytics.ts (Interface Definitions)
 
 ## Data Flow Architecture
 
-### **Real Data Path (Primary)**
+### **Daily Users Data Path**
 ```
 User Click → Dashboard.tsx → fetch(/api/analytics/new-users?days=X) 
-→ route.ts → db.ts → PostgreSQL → JSON Response → ChartData[] → D3.js
+→ route.ts → getNewUsersByDay() → PostgreSQL → JSON Response → ChartData[] → D3.js
 ```
 
-### **Mock Data Path (Fallback)**
+### **Cohort Analysis Data Path**
+```
+User Toggle → Dashboard.tsx → fetch(/api/analytics/cohort-analysis?period=monthly&months=12) 
+→ route.ts → getCohortAnalysis() → Complex SQL with JOINs → JSON Response → CohortData[] → D3.js
+```
+
+### **Daily Users Fallback Path**
 ```
 Database Error → Dashboard.tsx → fetch(/api/analytics/new-users/mock?days=X) 
 → mock/route.ts → Generated Data → JSON Response → ChartData[] → D3.js
 ```
 
-### **Caching Layer**
+### **Caching Strategy**
 ```
-Request → Check 5-minute cache → Return cached OR fetch fresh → Update cache
+Daily Users: 5-minute cache (real-time feel)
+Cohort Analysis: 15-minute cache (analytical data)
+Both: Debounced requests (300ms) prevent API spam
 ```
 
 ---
