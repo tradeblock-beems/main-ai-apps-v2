@@ -64,62 +64,62 @@ export default function CohortAnalysisChart({
     const g = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Prepare data for grouped bars
+    // Prepare data for action-grouped bars (user wanted action groups, not cohort groups)
     const actionTypes = ['closetAdd', 'wishlistAdd', 'createOffer', 'allActions'] as const;
     
-    // Transform data for D3 grouped bar chart
-    interface ActionData {
-      action: string;
+    // Transform data for D3 grouped bar chart - Group by ACTION, bars show COHORTS
+    interface CohortDataPoint {
+      cohort: string;
       percentage: number;
       count: number;
-      color: string;
-    }
-
-    interface ChartDataItem {
-      cohort: string;
       totalUsers: number;
-      actions: ActionData[];
     }
 
-    const chartData: ChartDataItem[] = data.map(cohort => ({
-      cohort: cohort.cohortPeriod,
-      totalUsers: cohort.totalUsers,
-      actions: actionTypes.map(actionType => ({
-        action: actionType,
+    interface ActionGroupData {
+      action: string;
+      actionLabel: string;
+      color: string;
+      cohorts: CohortDataPoint[];
+    }
+
+    // Create color scale for cohorts
+    const cohortColorScale = d3.scaleOrdinal()
+      .domain(data.map(d => d.cohortPeriod))
+      .range(d3.schemeCategory10);
+
+    // Group data by action type, with cohorts as bars within each action
+    const chartData: ActionGroupData[] = actionTypes.map(actionType => ({
+      action: actionType,
+      actionLabel: ACTION_LABELS[actionType],
+      color: ACTION_COLORS[actionType], // Keep for reference, but bars will use cohort colors
+      cohorts: data.map(cohort => ({
+        cohort: cohort.cohortPeriod,
         percentage: cohort.actions[actionType].percentage,
         count: cohort.actions[actionType].count,
-        color: ACTION_COLORS[actionType]
+        totalUsers: cohort.totalUsers
       }))
     }));
 
-    // Scales
+    // Scales - Now grouping by ACTION, with cohorts as bars within each action
     const xScale = d3.scaleBand()
-      .domain(chartData.map(d => d.cohort))
+      .domain(chartData.map(d => d.actionLabel))
       .range([0, innerWidth])
       .padding(0.1);
 
     const xSubScale = d3.scaleBand()
-      .domain(actionTypes)
+      .domain(data.map(d => d.cohortPeriod))
       .range([0, xScale.bandwidth()])
       .padding(0.05);
 
     const yScale = d3.scaleLinear()
-      .domain([0, d3.max(chartData, d => d3.max(d.actions, a => a.percentage)) || 100])
+      .domain([0, d3.max(chartData, d => d3.max(d.cohorts, c => c.percentage)) || 100])
       .nice()
       .range([innerHeight, 0]);
 
-    // X Axis
+    // X Axis - Now showing action labels
     g.append("g")
       .attr("transform", `translate(0,${innerHeight})`)
       .call(d3.axisBottom(xScale)
-        .tickFormat(d => {
-          // Format axis labels based on period type
-          if (periodType === 'monthly') {
-            return d.slice(-2); // Show just "01", "02", etc for months
-          } else {
-            return d.split('-W')[1]; // Show just week number for weekly
-          }
-        })
         .tickSizeOuter(0))
       .selectAll("text")
       .style("font-size", "12px")
@@ -150,7 +150,7 @@ export default function CohortAnalysisChart({
       .style("text-anchor", "middle")
       .style("font-size", "14px")
       .style("fill", "#64748b")
-      .text(periodType === 'monthly' ? 'Month' : 'Week');
+      .text("Action Type");
 
     // Tooltip
     const tooltip = d3.select("body").append("div")
@@ -167,38 +167,38 @@ export default function CohortAnalysisChart({
       .style("z-index", "1000")
       .style("box-shadow", "0 4px 6px -1px rgb(0 0 0 / 0.1)");
 
-    // Create grouped bars
-    const cohortGroups = g.selectAll(".cohort-group")
+    // Create grouped bars - Now grouping by ACTION
+    const actionGroups = g.selectAll(".action-group")
       .data(chartData)
       .enter().append("g")
-      .attr("class", "cohort-group")
-      .attr("transform", d => `translate(${xScale(d.cohort)}, 0)`);
+      .attr("class", "action-group")
+      .attr("transform", d => `translate(${xScale(d.actionLabel)}, 0)`);
 
-    // Add bars for each action type
-    cohortGroups.selectAll(".bar")
-      .data((d: ChartDataItem) => d.actions.map(action => ({ ...action, cohort: d.cohort, totalUsers: d.totalUsers })))
+    // Add bars for each cohort within action groups
+    actionGroups.selectAll(".bar")
+      .data((d: ActionGroupData) => d.cohorts.map(cohort => ({ ...cohort, action: d.action, actionLabel: d.actionLabel })))
       .enter().append("rect")
       .attr("class", "bar")
-      .attr("x", (d: ActionData & { cohort: string; totalUsers: number }) => xSubScale(d.action) || 0)
+      .attr("x", (d: CohortDataPoint & { action: string; actionLabel: string }) => xSubScale(d.cohort) || 0)
       .attr("width", xSubScale.bandwidth())
       .attr("y", innerHeight) // Start from bottom for animation
       .attr("height", 0) // Start with height 0 for animation
-      .attr("fill", (d: ActionData & { cohort: string; totalUsers: number }) => d.color)
+      .attr("fill", (d: CohortDataPoint & { action: string; actionLabel: string }) => cohortColorScale(d.cohort) as string)
       .style("cursor", "pointer");
 
     // Animate bars
-    cohortGroups.selectAll(".bar")
+    actionGroups.selectAll(".bar")
       .transition()
       .duration(1000)
       .delay((_, i: number) => i * 50) // Staggered animation
       .ease(d3.easeQuadOut)
-      .attr("y", (d: unknown) => yScale((d as ActionData & { cohort: string; totalUsers: number }).percentage))
-      .attr("height", (d: unknown) => innerHeight - yScale((d as ActionData & { cohort: string; totalUsers: number }).percentage));
+      .attr("y", (d: unknown) => yScale((d as CohortDataPoint & { action: string; actionLabel: string }).percentage))
+      .attr("height", (d: unknown) => innerHeight - yScale((d as CohortDataPoint & { action: string; actionLabel: string }).percentage));
 
     // Add hover effects
-    cohortGroups.selectAll(".bar")
+    actionGroups.selectAll(".bar")
       .on("mouseover", function(event, d: unknown) {
-        const barData = d as ActionData & { cohort: string; totalUsers: number };
+        const barData = d as CohortDataPoint & { action: string; actionLabel: string };
         
         d3.select(this)
           .transition()
@@ -211,10 +211,10 @@ export default function CohortAnalysisChart({
         
         tooltip.html(`
           <div style="font-weight: bold; margin-bottom: 8px;">
-            ${barData.cohort} Cohort
+            ${barData.actionLabel}
           </div>
           <div style="margin-bottom: 4px;">
-            <strong>${ACTION_LABELS[barData.action as keyof typeof ACTION_LABELS]}:</strong>
+            <strong>${barData.cohort} Cohort:</strong>
           </div>
           <div style="margin-bottom: 2px;">
             ${barData.count} users (${barData.percentage.toFixed(1)}%)
@@ -237,13 +237,13 @@ export default function CohortAnalysisChart({
           .style("opacity", 0);
       });
 
-    // Legend
+    // Legend - Show cohort periods with colors
     const legend = svg.append("g")
       .attr("class", "legend")
       .attr("transform", `translate(${width - margin.right + 20}, ${margin.top})`);
 
     const legendItems = legend.selectAll(".legend-item")
-      .data(actionTypes)
+      .data(data.map(d => d.cohortPeriod))
       .enter().append("g")
       .attr("class", "legend-item")
       .attr("transform", (d, i) => `translate(0, ${i * 25})`);
@@ -251,7 +251,7 @@ export default function CohortAnalysisChart({
     legendItems.append("rect")
       .attr("width", 16)
       .attr("height", 16)
-      .attr("fill", d => ACTION_COLORS[d])
+      .attr("fill", d => cohortColorScale(d) as string)
       .attr("rx", 2);
 
     legendItems.append("text")
@@ -260,7 +260,7 @@ export default function CohortAnalysisChart({
       .attr("dy", "0.35em")
       .style("font-size", "12px")
       .style("fill", "#374151")
-      .text(d => ACTION_LABELS[d]);
+      .text(d => d);
 
     // Cleanup function
     return () => {

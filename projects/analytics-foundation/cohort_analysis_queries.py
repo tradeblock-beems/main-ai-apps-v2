@@ -124,7 +124,6 @@ class CohortAnalysisQueries:
                 username
             FROM users 
             WHERE created_at >= '2025-03-05'::date
-                AND created_at >= (CURRENT_DATE - INTERVAL '%s months')
                 AND deleted_at = 0
         ),
         cohort_actions AS (
@@ -221,7 +220,6 @@ class CohortAnalysisQueries:
                 username
             FROM users 
             WHERE created_at >= '2025-03-05'::date
-                AND created_at >= (CURRENT_DATE - INTERVAL '%s weeks')
                 AND deleted_at = 0
         ),
         cohort_actions AS (
