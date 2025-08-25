@@ -9,7 +9,7 @@
     "timezone": "America/Chicago",
     "frequency": "daily",
     "startDate": "2025-08-12",
-    "executionTime": "21:30",
+    "executionTime": "21:00",
     "leadTimeMinutes": 30
   },
   "template": {
@@ -29,7 +29,9 @@
       "timing": {
         "delayAfterPrevious": 0
       },
-      "status": "pending"
+      "status": "pending",
+      "id": "",
+      "automationId": "358676a1-8aa8-405d-9332-580b49e30421"
     },
     {
       "sequenceOrder": 2,
@@ -41,7 +43,9 @@
       "timing": {
         "delayAfterPrevious": 5
       },
-      "status": "pending"
+      "status": "pending",
+      "id": "",
+      "automationId": "358676a1-8aa8-405d-9332-580b49e30421"
     },
     {
       "sequenceOrder": 3,
@@ -53,7 +57,9 @@
       "timing": {
         "delayAfterPrevious": 5
       },
-      "status": "pending"
+      "status": "pending",
+      "id": "",
+      "automationId": "358676a1-8aa8-405d-9332-580b49e30421"
     }
   ],
   "audienceCriteria": {
@@ -89,5 +95,5 @@
     "failedExecutions": 0
   },
   "createdAt": "2025-08-12T03:48:10.318Z",
-  "updatedAt": "2025-08-21T00:27:08.903Z"
+  "updatedAt": "2025-08-25T09:53:06.209Z"
 }
