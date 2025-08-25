@@ -1,0 +1,19 @@
+{
+  "start_time": "2025-08-25 11:55:48.328207",
+  "mode": "test",
+  "batch_size": 500,
+  "batches_processed": 1,
+  "total_users_processed": 100,
+  "performance_issues": [],
+  "data_quality_metrics": {
+    "valid": true,
+    "total_records": 100,
+    "username_coverage": 100.0,
+    "activity_coverage": 0.0,
+    "data_quality_score": 100.0
+  },
+  "query_performance": {},
+  "output_csv": "test_output/new_user_fact_table_20250825_115548.csv",
+  "end_time": "2025-08-25 11:55:50.303774",
+  "total_execution_time": 1.975567
+}

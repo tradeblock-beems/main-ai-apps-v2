@@ -1006,28 +1006,30 @@ export class AutomationEngine {
   }
 }
 
-// --- HOT-RELOAD-RESISTANT SINGLETON ---
-// In development, Next.js clears the module cache on every refresh,
-// which would destroy our singleton. We cache it on the global object
-// to ensure it persists across hot reloads.
+// --- ATOMIC MODULE-LEVEL SINGLETON ---
+// Eliminates race conditions by creating instance at module load time.
+// Node.js module loading is synchronous and single-threaded, making this truly atomic.
 
 // Add a type definition for our custom global variable to avoid TypeScript errors
 declare const global: typeof globalThis & {
   _automationEngineInstance: AutomationEngine | null;
 };
 
-let automationEngine: AutomationEngine | null = null;
+// Production: Create instance immediately at module load (atomic, no race conditions)
+const productionInstance: AutomationEngine | null = 
+  process.env.NODE_ENV === 'production' ? new AutomationEngine() : null;
+
+// Log production instance creation
+if (productionInstance) {
+  console.log('[AutomationEngine] Production mode: Created atomic module-level singleton instance.');
+}
 
 export function getAutomationEngineInstance(): AutomationEngine {
   if (process.env.NODE_ENV === 'production') {
-    // In production, the server starts once, so a simple singleton is fine.
-    if (!automationEngine) {
-      automationEngine = new AutomationEngine();
-      console.log('[AutomationEngine] Production mode: Created new singleton instance.');
-    }
-    return automationEngine;
+    // Return pre-created instance (guaranteed to exist and be unique)
+    return productionInstance!;
   } else {
-    // In development, check if the instance already exists on the global object.
+    // Development: Use global caching for hot-reload resistance
     if (!global._automationEngineInstance) {
       global._automationEngineInstance = new AutomationEngine();
       console.log('[AutomationEngine] Development mode: Created and cached new singleton instance on global.');
