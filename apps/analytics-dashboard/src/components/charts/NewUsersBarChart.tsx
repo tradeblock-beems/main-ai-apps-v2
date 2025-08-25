@@ -63,10 +63,15 @@ export default function NewUsersBarChart({
       .domain([0, d3.max(data, d => d.count) || 0])
       .interpolator(d3.interpolateBlues);
 
-    // X Axis
+    // X Axis - Show every 3rd day to prevent overlapping
+    const tickValues = data
+      .map(d => d.date)
+      .filter((_, index) => index % 3 === 0);
+    
     g.append("g")
       .attr("transform", `translate(0,${innerHeight})`)
       .call(d3.axisBottom(xScale)
+        .tickValues(tickValues)
         .tickFormat(d => {
           const date = new Date(d);
           return d3.timeFormat("%m/%d")(date);
