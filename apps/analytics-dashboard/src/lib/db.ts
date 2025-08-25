@@ -134,6 +134,172 @@ export async function getNewUsersCount(
   return parseInt(result.rows[0]?.total || '0', 10);
 }
 
+// Get cohort analysis data with 72-hour completion rates
+export async function getCohortAnalysis(
+  periodType: 'monthly' | 'weekly' = 'monthly',
+  periods: number = 12
+): Promise<any[]> {
+  
+  const query = periodType === 'monthly' ? `
+    WITH monthly_cohorts AS (
+      -- Group users by month joined (starting March 2025)
+      SELECT 
+        DATE_TRUNC('month', created_at) as cohort_month,
+        id as user_id,
+        created_at as join_date,
+        username
+      FROM users 
+      WHERE created_at >= '2025-03-05'::date
+        AND deleted_at = 0
+    ),
+    cohort_actions AS (
+      -- Calculate completion status for each user within 72 hours
+      SELECT 
+        mc.cohort_month,
+        mc.user_id,
+        mc.join_date,
+        mc.username,
+        
+        -- Closet Add (first inventory item addition)
+        CASE WHEN MIN(ii.created_at) <= mc.join_date + INTERVAL '72 hours' 
+             THEN 1 ELSE 0 END as completed_closet_add,
+             
+        -- Wishlist Add (first wishlist item addition)  
+        CASE WHEN MIN(wi.created_at) <= mc.join_date + INTERVAL '72 hours'
+             THEN 1 ELSE 0 END as completed_wishlist_add,
+             
+        -- Create Offer (first offer creation)
+        CASE WHEN MIN(o.created_at) <= mc.join_date + INTERVAL '72 hours'
+             THEN 1 ELSE 0 END as completed_create_offer
+             
+      FROM monthly_cohorts mc
+      LEFT JOIN inventory_items ii ON mc.user_id = ii.user_id AND ii.deleted_at = 0
+      LEFT JOIN wishlist_items wi ON mc.user_id = wi.user_id AND wi.deleted_at = 0  
+      LEFT JOIN offers o ON mc.user_id = o.creator_user_id AND o.deleted_at = 0
+      GROUP BY mc.cohort_month, mc.user_id, mc.join_date, mc.username
+    ),
+    cohort_summary AS (
+      -- Calculate completion rates per cohort
+      SELECT 
+        cohort_month,
+        COUNT(*) as total_users,
+        
+        -- Individual action completion rates
+        SUM(completed_closet_add) as closet_add_count,
+        ROUND(SUM(completed_closet_add) * 100.0 / COUNT(*), 2) as closet_add_percentage,
+        
+        SUM(completed_wishlist_add) as wishlist_add_count, 
+        ROUND(SUM(completed_wishlist_add) * 100.0 / COUNT(*), 2) as wishlist_add_percentage,
+        
+        SUM(completed_create_offer) as create_offer_count,
+        ROUND(SUM(completed_create_offer) * 100.0 / COUNT(*), 2) as create_offer_percentage,
+        
+        -- All actions completion (users who completed all 3)
+        SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
+                 THEN 1 ELSE 0 END) as all_actions_count,
+        ROUND(SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
+                      THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as all_actions_percentage
+                      
+      FROM cohort_actions
+      GROUP BY cohort_month
+    )
+    SELECT 
+      cohort_month,
+      TO_CHAR(cohort_month, 'YYYY-MM') as cohort_period,
+      total_users,
+      closet_add_count,
+      closet_add_percentage,
+      wishlist_add_count,
+      wishlist_add_percentage, 
+      create_offer_count,
+      create_offer_percentage,
+      all_actions_count,
+      all_actions_percentage
+    FROM cohort_summary
+    ORDER BY cohort_month ASC
+  ` : `
+    WITH weekly_cohorts AS (
+      -- Group users by week joined (starting March 2025)
+      SELECT 
+        DATE_TRUNC('week', created_at) as cohort_week,
+        id as user_id,
+        created_at as join_date,
+        username
+      FROM users 
+      WHERE created_at >= '2025-03-05'::date
+        AND deleted_at = 0
+    ),
+    cohort_actions AS (
+      -- Calculate completion status for each user within 72 hours
+      SELECT 
+        wc.cohort_week,
+        wc.user_id,
+        wc.join_date,
+        wc.username,
+        
+        -- Closet Add (first inventory item addition)
+        CASE WHEN MIN(ii.created_at) <= wc.join_date + INTERVAL '72 hours' 
+             THEN 1 ELSE 0 END as completed_closet_add,
+             
+        -- Wishlist Add (first wishlist item addition)  
+        CASE WHEN MIN(wi.created_at) <= wc.join_date + INTERVAL '72 hours'
+             THEN 1 ELSE 0 END as completed_wishlist_add,
+             
+        -- Create Offer (first offer creation)
+        CASE WHEN MIN(o.created_at) <= wc.join_date + INTERVAL '72 hours'
+             THEN 1 ELSE 0 END as completed_create_offer
+             
+      FROM weekly_cohorts wc
+      LEFT JOIN inventory_items ii ON wc.user_id = ii.user_id AND ii.deleted_at = 0
+      LEFT JOIN wishlist_items wi ON wc.user_id = wi.user_id AND wi.deleted_at = 0  
+      LEFT JOIN offers o ON wc.user_id = o.creator_user_id AND o.deleted_at = 0
+      GROUP BY wc.cohort_week, wc.user_id, wc.join_date, wc.username
+    ),
+    cohort_summary AS (
+      -- Calculate completion rates per cohort
+      SELECT 
+        cohort_week,
+        COUNT(*) as total_users,
+        
+        -- Individual action completion rates
+        SUM(completed_closet_add) as closet_add_count,
+        ROUND(SUM(completed_closet_add) * 100.0 / COUNT(*), 2) as closet_add_percentage,
+        
+        SUM(completed_wishlist_add) as wishlist_add_count, 
+        ROUND(SUM(completed_wishlist_add) * 100.0 / COUNT(*), 2) as wishlist_add_percentage,
+        
+        SUM(completed_create_offer) as create_offer_count,
+        ROUND(SUM(completed_create_offer) * 100.0 / COUNT(*), 2) as create_offer_percentage,
+        
+        -- All actions completion (users who completed all 3)
+        SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
+                 THEN 1 ELSE 0 END) as all_actions_count,
+        ROUND(SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
+                      THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as all_actions_percentage
+                      
+      FROM cohort_actions
+      GROUP BY cohort_week
+    )
+    SELECT 
+      cohort_week as cohort_month,
+      TO_CHAR(cohort_week, 'YYYY-"W"WW') as cohort_period,
+      total_users,
+      closet_add_count,
+      closet_add_percentage,
+      wishlist_add_count,
+      wishlist_add_percentage, 
+      create_offer_count,
+      create_offer_percentage,
+      all_actions_count,
+      all_actions_percentage
+    FROM cohort_summary
+    ORDER BY cohort_week ASC
+  `;
+
+  const result = await executeQuery(query);
+  return result.rows;
+}
+
 // Graceful pool shutdown for application cleanup
 export async function closeDatabasePool(): Promise<void> {
   try {

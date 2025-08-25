@@ -3,11 +3,12 @@
  * 
  * GET endpoint providing new user cohort completion rates for key onboarding actions
  * within 72 hours of account creation. Supports monthly and weekly cohort grouping.
+ * 
+ * Uses direct database queries instead of Python script execution for reliability.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import path from 'path';
+import { getCohortAnalysis, checkDatabaseConnection } from '@/lib/db';
 import type { 
   CohortData, 
   CohortAnalysisParams,
@@ -18,6 +19,18 @@ import type {
 
 export async function GET(request: NextRequest) {
   try {
+    // Health check database connection
+    const isHealthy = await checkDatabaseConnection();
+    if (!isHealthy) {
+      const errorResponse: ApiError = {
+        success: false,
+        error: 'Database connection unavailable',
+        code: 'DB_CONNECTION_ERROR',
+        timestamp: new Date().toISOString()
+      };
+      return NextResponse.json(errorResponse, { status: 503 });
+    }
+
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const queryParams: CohortAnalysisParams = {
@@ -56,90 +69,39 @@ export async function GET(request: NextRequest) {
       periods = parsedMonths;
     }
 
-    console.log(`Fetching ${queryParams.period} cohort analysis for ${periods} periods`);
+    console.log(`Fetching ${queryParams.period} cohort analysis for ${periods} periods via direct database query`);
 
-    // Execute Python cohort analysis script
-    const scriptPath = path.join(process.cwd(), '../../projects/analytics-foundation/cohort_analysis_queries.py');
-    const args = [
-      scriptPath,
-      queryParams.period === 'monthly' ? '--monthly' : '--weekly',
-      '--periods', periods.toString()
-    ];
-
-    const pythonData = await new Promise<string>((resolve, reject) => {
-      const pythonProcess = spawn('python3', args);
-      let data = '';
-      let errorData = '';
-
-      pythonProcess.stdout.on('data', (chunk) => {
-        data += chunk.toString();
-      });
-
-      pythonProcess.stderr.on('data', (chunk) => {
-        errorData += chunk.toString();
-      });
-
-      pythonProcess.on('close', (code) => {
-        if (code === 0) {
-          resolve(data);
-        } else {
-          console.error('Python script error:', errorData);
-          reject(new Error(`Python script failed with code ${code}: ${errorData}`));
-        }
-      });
-
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        pythonProcess.kill();
-        reject(new Error('Cohort analysis query timeout'));
-      }, 30000);
-    });
-
-    // Parse the JSON output from Python script
-    const lines = pythonData.trim().split('\n');
-    let jsonOutput = '';
-    
-    // Find the JSON data in the output (skip log messages)
-    for (const line of lines) {
-      if (line.startsWith('[') || line.startsWith('{')) {
-        jsonOutput = line;
-        break;
-      }
-    }
-
-    if (!jsonOutput) {
-      throw new Error('No valid JSON data in Python script output');
-    }
-
-    const rawCohortData = JSON.parse(jsonOutput);
-    console.log(`Received ${rawCohortData.length} cohort periods from database`);
+    // Execute direct database query for cohort analysis
+    const rawCohortData = await getCohortAnalysis(queryParams.period, periods);
 
     // Transform database results to CohortData format
     const cohortData: CohortData[] = rawCohortData.map((row: Record<string, unknown>) => ({
       cohortPeriod: row.cohort_period as string,
-      cohortStartDate: new Date((row.cohort_month || row.cohort_week) as string).toISOString().split('T')[0],
+      cohortStartDate: new Date((row.cohort_month) as string).toISOString().split('T')[0],
       totalUsers: row.total_users as number,
       actions: {
         closetAdd: {
           count: row.closet_add_count as number,
-          percentage: row.closet_add_percentage as number
+          percentage: parseFloat(row.closet_add_percentage as string)
         },
         wishlistAdd: {
           count: row.wishlist_add_count as number,
-          percentage: row.wishlist_add_percentage as number
+          percentage: parseFloat(row.wishlist_add_percentage as string)
         },
         createOffer: {
           count: row.create_offer_count as number,
-          percentage: row.create_offer_percentage as number
+          percentage: parseFloat(row.create_offer_percentage as string)
         },
         allActions: {
           count: row.all_actions_count as number,
-          percentage: row.all_actions_percentage as number
+          percentage: parseFloat(row.all_actions_percentage as string)
         }
       }
     }));
 
-    // Create successful API response with metadata
+    console.log(`Successfully retrieved ${cohortData.length} cohorts from database`);
+
+    // Create response with metadata
     const response: CohortAnalysisResponse = {
       success: true,
       data: cohortData,
@@ -154,9 +116,9 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    // Set cache headers for cohort data (15 minutes - longer than real-time data)
+    // Set cache headers for performance (15 minute cache for cohort analysis)
     const headers = {
-      'Cache-Control': 'public, max-age=900, stale-while-revalidate=1800', // 15 min cache, 30 min stale
+      'Cache-Control': 'public, max-age=900, stale-while-revalidate=1800', // 15 min cache
       'Content-Type': 'application/json'
     };
 
@@ -175,5 +137,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(errorResponse, { status: 500 });
   }
 }
-
-// GET method exported above

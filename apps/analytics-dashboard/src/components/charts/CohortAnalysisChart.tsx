@@ -82,10 +82,13 @@ export default function CohortAnalysisChart({
       cohorts: CohortDataPoint[];
     }
 
-    // Create color scale for cohorts
-    const cohortColorScale = d3.scaleOrdinal()
-      .domain(data.map(d => d.cohortPeriod))
-      .range(d3.schemeCategory10);
+    // Create single color gradient for cohorts (lighter = earlier, darker = recent)
+    const cohortColorScale = d3.scaleSequential()
+      .domain([0, data.length - 1])
+      .interpolator(d3.interpolateBlues);
+
+    // Create a mapping function for cohort periods to color indices
+    const cohortIndexMap = new Map(data.map((d, i) => [d.cohortPeriod, i]));
 
     // Group data by action type, with cohorts as bars within each action
     const chartData: ActionGroupData[] = actionTypes.map(actionType => ({
@@ -183,7 +186,7 @@ export default function CohortAnalysisChart({
       .attr("width", xSubScale.bandwidth())
       .attr("y", innerHeight) // Start from bottom for animation
       .attr("height", 0) // Start with height 0 for animation
-      .attr("fill", (d: CohortDataPoint & { action: string; actionLabel: string }) => cohortColorScale(d.cohort) as string)
+      .attr("fill", (d: CohortDataPoint & { action: string; actionLabel: string }) => cohortColorScale(cohortIndexMap.get(d.cohort) || 0) as string)
       .style("cursor", "pointer");
 
     // Animate bars
@@ -251,7 +254,7 @@ export default function CohortAnalysisChart({
     legendItems.append("rect")
       .attr("width", 16)
       .attr("height", 16)
-      .attr("fill", d => cohortColorScale(d) as string)
+      .attr("fill", d => cohortColorScale(cohortIndexMap.get(d) || 0) as string)
       .attr("rx", 2);
 
     legendItems.append("text")

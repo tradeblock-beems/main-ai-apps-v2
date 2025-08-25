@@ -127,13 +127,13 @@ export default function Dashboard({ className = "" }: DashboardProps) {
     setDebounceTimer(timer);
   };
 
-  // Fetch cohort data with caching and fallback (Phase 6.5)
-  const fetchCohortData = async (periodType: CohortPeriodType, useRealData: boolean = true) => {
+  // Fetch cohort data with caching (Phase 6.5)
+  const fetchCohortData = async (periodType: CohortPeriodType) => {
     setCohortLoading(true);
     setCohortError(null);
     
     // Check cache first (15 minute expiry for cohort data)
-    const cacheKey = `${periodType}-${useRealData ? 'real' : 'mock'}`;
+    const cacheKey = `${periodType}`;
     const cached = cohortCache.get(cacheKey);
     const now = Date.now();
     
@@ -145,15 +145,8 @@ export default function Dashboard({ className = "" }: DashboardProps) {
     
     try {
       const periods = periodType === 'monthly' ? 12 : 24; // 12 months or 24 weeks
-      let endpoint = `/api/analytics/cohort-analysis?period=${periodType}&months=${periods}`;
-      let response = await fetch(endpoint);
-      
-      // Fallback to mock data if real data fails
-      if (!response.ok && useRealData) {
-        console.warn('Real cohort data endpoint failed, falling back to mock data');
-        endpoint = `/api/analytics/cohort-analysis/mock?period=${periodType}&months=${periods}`;
-        response = await fetch(endpoint);
-      }
+      const endpoint = `/api/analytics/cohort-analysis?period=${periodType}&months=${periods}`;
+      const response = await fetch(endpoint);
       
       if (!response.ok) {
         throw new Error(`Cohort analysis API request failed: ${response.status}`);
@@ -177,14 +170,6 @@ export default function Dashboard({ className = "" }: DashboardProps) {
       
     } catch (err) {
       console.error('Failed to fetch cohort data:', err);
-      
-      // If real data failed and we haven't tried mock yet, try mock
-      if (useRealData) {
-        console.log('Attempting fallback to mock cohort data...');
-        await fetchCohortData(periodType, false);
-        return;
-      }
-      
       setCohortError(err instanceof Error ? err.message : 'Failed to load cohort data');
       setCohortData([]);
     } finally {

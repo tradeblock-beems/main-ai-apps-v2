@@ -34,10 +34,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from basic_capabilities.internal_db_queries_toolbox.config import DATABASE_URL
 
-# Configure logging
+# Configure logging to stderr to avoid interfering with JSON output
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    stream=sys.stderr  # Send logs to stderr instead of stdout
 )
 logger = logging.getLogger(__name__)
 
@@ -407,6 +408,7 @@ if __name__ == "__main__":
     parser.add_argument('--monthly', action='store_true', help='Run monthly cohort analysis')
     parser.add_argument('--weekly', action='store_true', help='Run weekly cohort analysis')
     parser.add_argument('--periods', type=int, help='Number of periods to analyze')
+    parser.add_argument('--json', action='store_true', help='Output JSON format for API consumption')
     
     args = parser.parse_args()
     
@@ -416,25 +418,37 @@ if __name__ == "__main__":
         print(json.dumps(test_results, indent=2, default=str))
     
     if args.monthly:
-        print("Running monthly cohort analysis...")
         periods = args.periods or 12
         monthly_results = get_cohort_analysis('monthly', periods)
-        print(f"Monthly cohorts ({len(monthly_results)} periods):")
-        for cohort in monthly_results[:5]:  # Show first 5
-            print(f"  {cohort['cohort_period']}: {cohort['total_users']} users, "
-                  f"Closet: {cohort['closet_add_percentage']}%, "
-                  f"Wishlist: {cohort['wishlist_add_percentage']}%, "
-                  f"Offer: {cohort['create_offer_percentage']}%, "
-                  f"All: {cohort['all_actions_percentage']}%")
+        
+        if args.json:
+            # Output clean JSON for API consumption
+            print(json.dumps(monthly_results, indent=2, default=str))
+        else:
+            # Output human-readable format for command line
+            print("Running monthly cohort analysis...")
+            print(f"Monthly cohorts ({len(monthly_results)} periods):")
+            for cohort in monthly_results[:5]:  # Show first 5
+                print(f"  {cohort['cohort_period']}: {cohort['total_users']} users, "
+                      f"Closet: {cohort['closet_add_percentage']}%, "
+                      f"Wishlist: {cohort['wishlist_add_percentage']}%, "
+                      f"Offer: {cohort['create_offer_percentage']}%, "
+                      f"All: {cohort['all_actions_percentage']}%")
     
     if args.weekly:
-        print("Running weekly cohort analysis...")
         periods = args.periods or 24
         weekly_results = get_cohort_analysis('weekly', periods)
-        print(f"Weekly cohorts ({len(weekly_results)} periods):")
-        for cohort in weekly_results[:5]:  # Show first 5
-            print(f"  {cohort['cohort_period']}: {cohort['total_users']} users, "
-                  f"Closet: {cohort['closet_add_percentage']}%, "
-                  f"Wishlist: {cohort['wishlist_add_percentage']}%, "
-                  f"Offer: {cohort['create_offer_percentage']}%, "
-                  f"All: {cohort['all_actions_percentage']}%")
+        
+        if args.json:
+            # Output clean JSON for API consumption
+            print(json.dumps(weekly_results, indent=2, default=str))
+        else:
+            # Output human-readable format for command line
+            print("Running weekly cohort analysis...")
+            print(f"Weekly cohorts ({len(weekly_results)} periods):")
+            for cohort in weekly_results[:5]:  # Show first 5
+                print(f"  {cohort['cohort_period']}: {cohort['total_users']} users, "
+                      f"Closet: {cohort['closet_add_percentage']}%, "
+                      f"Wishlist: {cohort['wishlist_add_percentage']}%, "
+                      f"Offer: {cohort['create_offer_percentage']}%, "
+                      f"All: {cohort['all_actions_percentage']}%")
