@@ -16,34 +16,8 @@ import type {
   OfferCreatorAnalysisResponse
 } from '@/types/analytics';
 
-// Placeholder components - will be implemented in next steps
-const DailyOffersChart = ({ data, isLoading }: { 
-  data: OfferCreationData[]; 
-  isLoading: boolean; 
-}) => (
-  <div className="h-96 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center">
-    <div className="text-center">
-      <div className="text-lg font-medium text-slate-600 mb-2">Daily Offers Chart</div>
-      <div className="text-sm text-slate-500">
-        {isLoading ? 'Loading...' : `${data.length} days of data`}
-      </div>
-    </div>
-  </div>
-);
-
-const OfferCreatorPercentageChart = ({ data, isLoading }: { 
-  data: OfferCreatorMetrics[]; 
-  isLoading: boolean; 
-}) => (
-  <div className="h-96 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center">
-    <div className="text-center">
-      <div className="text-lg font-medium text-slate-600 mb-2">Offer Creator % Chart</div>
-      <div className="text-sm text-slate-500">
-        {isLoading ? 'Loading...' : `${data.length} time windows`}
-      </div>
-    </div>
-  </div>
-);
+import DailyOffersChart from '@/components/charts/DailyOffersChart';
+import OfferCreatorPercentageChart from '@/components/charts/OfferCreatorPercentageChart';
 
 const DateRangeToggle = ({ selectedDays, onRangeChange }: {
   selectedDays: number;
