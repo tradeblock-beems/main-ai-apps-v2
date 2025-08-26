@@ -13,6 +13,7 @@ import type { ChartData } from '@/types/analytics';
 
 interface NewUsersBarChartProps {
   data: ChartData[];
+  isLoading?: boolean;
   width?: number;
   height?: number;
   className?: string;
@@ -20,6 +21,7 @@ interface NewUsersBarChartProps {
 
 export default function NewUsersBarChart({ 
   data, 
+  isLoading = false,
   width = 800, 
   height = 400,
   className = "" 

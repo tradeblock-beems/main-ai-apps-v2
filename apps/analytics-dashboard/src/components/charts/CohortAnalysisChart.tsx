@@ -13,6 +13,7 @@ import type { CohortData, CohortPeriodType } from '@/types/analytics';
 
 interface CohortAnalysisChartProps {
   data: CohortData[];
+  isLoading?: boolean;
   periodType: CohortPeriodType;
   width?: number;
   height?: number;
@@ -36,6 +37,7 @@ const ACTION_LABELS = {
 
 export default function CohortAnalysisChart({ 
   data, 
+  isLoading = false,
   periodType,
   width = 900, 
   height = 450,

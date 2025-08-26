@@ -4,9 +4,9 @@
 
 ### What Users See & Do → How Code Delivers It
 
-**User Journey**: Visit `localhost:3003` → See analytics dashboard with dual charts → Click date range buttons → Watch daily users chart update → Toggle monthly/weekly cohorts → Watch cohort analysis chart update with new data
+**User Journey**: Visit `localhost:3003` → See analytics dashboard with tab navigation → Switch between "New Users" and "Offer Creation" tabs → Each tab displays specialized charts → Interactive controls update data in real-time
 
-**Code Journey**: `page.tsx` → `Dashboard.tsx` → Multiple API fetches → PostgreSQL queries → D3.js rendering for both charts
+**Code Journey**: `page.tsx` → `Dashboard.tsx` → `TabNavigation.tsx` → Tab-specific page components → Multiple API fetches → PostgreSQL queries → D3.js rendering per tab
 
 ---
 
@@ -40,10 +40,35 @@
 - 300ms debouncing prevents API spam during rapid toggles
 - 15-minute cache avoids redundant database queries for analytical data
 
-### 5. **See Performance Indicators**
-**User Expectation**: Green "Real data from database" badges confirm live data  
+### 5. **Navigate Between Analytics Sections**
+**User Expectation**: Click tabs to switch between "New Users" and "Offer Creation" analytics  
 **Code Implementation**:
-- Both APIs connect directly to PostgreSQL with health checks
+- `TabNavigation.tsx` manages tab state with active styling
+- Tab switches trigger different page component renders
+- URL routing (optional) maintains tab state across refreshes
+- Each tab maintains independent data fetching and caching
+
+### 6. **Analyze Offer Creation Metrics**
+**User Expectation**: View daily offer creation with breakdown by source (offer ideas vs regular)  
+**Code Implementation**:
+- `OfferCreationPage.tsx` renders dual chart layout for offer analytics
+- `DailyOffersChart.tsx` displays stacked bars showing `isOfferIdea` subdivision
+- API route `/api/analytics/offers/daily` queries offers table with date aggregation
+- Color coding: orange (offer ideas) vs blue (regular offers)
+
+### 7. **Track Offer Creator Percentages**
+**User Expectation**: See what % of active users are creating offers across different time windows  
+**Code Implementation**:
+- `OfferCreatorPercentageChart.tsx` displays percentage bars for 24h/72h/7d/30d/90d windows
+- Complex API endpoint `/api/analytics/offers/creator-percentage` calculates active users vs offer creators
+- Database queries track user activity and offer creation within each time window
+- Tooltips show total active users context for each percentage
+
+### 8. **See Performance Indicators**
+**User Expectation**: Green "Real data from database" badges confirm live data across all tabs  
+**Code Implementation**:
+- All APIs connect directly to PostgreSQL with health checks
+- Each tab shows independent data status indicators
 - UI conditionally shows green indicators when `data.length > 0 && !error`
 
 ---
@@ -52,12 +77,18 @@
 
 ### **Layer 1: User Interface (React + D3.js)**
 ```
-Dashboard.tsx (Dual Chart State Management)
-├── DateRangeToggle.tsx (Daily Users Input)
-├── NewUsersBarChart.tsx (D3.js Daily Visualization)
-├── CohortPeriodToggle.tsx (Cohort Analysis Input)
-├── CohortAnalysisChart.tsx (D3.js Grouped Bar Visualization)
-└── Loading/Error States (UX Feedback for Both Charts)
+Dashboard.tsx (Multi-Tab State Management)
+├── TabNavigation.tsx (Tab Switching Component)
+├── NewUsersPage.tsx (New Users Analytics)
+│   ├── DateRangeToggle.tsx (Date Range Controls)
+│   ├── NewUsersBarChart.tsx (Daily Users D3.js Chart)
+│   ├── CohortPeriodToggle.tsx (Cohort Period Controls)
+│   └── CohortAnalysisChart.tsx (Cohort D3.js Chart)
+├── OfferCreationPage.tsx (Offer Analytics)
+│   ├── TimeWindowToggle.tsx (Time Window Controls)
+│   ├── DailyOffersChart.tsx (Subdivided Offers D3.js Chart)
+│   └── OfferCreatorPercentageChart.tsx (Percentage D3.js Chart)
+└── Loading/Error States (UX Feedback Per Tab)
 ```
 
 **Breaking Change Risk**: Changes to React hooks, D3.js integration patterns, or component props  
@@ -68,6 +99,10 @@ Dashboard.tsx (Dual Chart State Management)
 app/api/analytics/new-users/route.ts (Daily Users - Real Data)
 app/api/analytics/new-users/mock/route.ts (Daily Users - Fallback)
 app/api/analytics/cohort-analysis/route.ts (Cohort Analysis - Real Data Only)
+app/api/analytics/offers/daily/route.ts (Daily Offers - Real Data)
+app/api/analytics/offers/daily/mock/route.ts (Daily Offers - Fallback)
+app/api/analytics/offers/creator-percentage/route.ts (Offer Creator % - Real Data)
+app/api/analytics/offers/creator-percentage/mock/route.ts (Offer Creator % - Fallback)
 ```
 
 **Breaking Change Risk**: URL structure changes, response format changes, parameter validation  
@@ -76,8 +111,10 @@ app/api/analytics/cohort-analysis/route.ts (Cohort Analysis - Real Data Only)
 ### **Layer 3: Database Integration (PostgreSQL)**
 ```
 src/lib/db.ts (Connection Pool + Query Functions)
-├── getNewUsersByDay() - Daily aggregation queries
+├── getNewUsersByDay() - Daily user aggregation queries
 ├── getCohortAnalysis() - Complex cohort calculations with 72-hour windows
+├── getDailyOffers() - Daily offer aggregation with isOfferIdea subdivision
+├── getOfferCreatorPercentages() - Complex user activity tracking across time windows
 └── checkDatabaseConnection() - Health monitoring
 src/lib/config.ts (Environment Variables)
 ```
@@ -90,7 +127,10 @@ src/lib/config.ts (Environment Variables)
 src/types/analytics.ts (Interface Definitions)
 ├── ChartData, ApiResponse<T> - Daily users interfaces
 ├── CohortData, CohortAnalysisResponse - Cohort analysis interfaces
-└── CohortPeriodType, CohortActionMetrics - Cohort-specific types
+├── CohortPeriodType, CohortActionMetrics - Cohort-specific types
+├── OfferCreationData, OfferSubdivisionData - Daily offers interfaces
+├── OfferCreatorMetrics, TimeWindowType - Offer creator percentage interfaces
+└── OfferAnalyticsResponse, OfferCreatorAnalysisResponse - API response types
 ```
 
 **Breaking Change Risk**: Interface mismatches between API responses and component expectations  
@@ -100,29 +140,51 @@ src/types/analytics.ts (Interface Definitions)
 
 ## Data Flow Architecture
 
-### **Daily Users Data Path**
+### **Tab Navigation Data Flow**
 ```
-User Click → Dashboard.tsx → fetch(/api/analytics/new-users?days=X) 
+User Tab Click → Dashboard.tsx → TabNavigation.tsx → setState(activeTab) 
+→ Conditional Component Render → Tab-specific data fetching
+```
+
+### **Daily Users Data Path (New Users Tab)**
+```
+User Click → NewUsersPage.tsx → fetch(/api/analytics/new-users?days=X) 
 → route.ts → getNewUsersByDay() → PostgreSQL → JSON Response → ChartData[] → D3.js
 ```
 
-### **Cohort Analysis Data Path**
+### **Cohort Analysis Data Path (New Users Tab)**
 ```
-User Toggle → Dashboard.tsx → fetch(/api/analytics/cohort-analysis?period=monthly&months=12) 
+User Toggle → NewUsersPage.tsx → fetch(/api/analytics/cohort-analysis?period=monthly&months=12) 
 → route.ts → getCohortAnalysis() → Complex SQL with JOINs → JSON Response → CohortData[] → D3.js
 ```
 
-### **Daily Users Fallback Path**
+### **Daily Offers Data Path (Offer Creation Tab)**
 ```
-Database Error → Dashboard.tsx → fetch(/api/analytics/new-users/mock?days=X) 
-→ mock/route.ts → Generated Data → JSON Response → ChartData[] → D3.js
+User Date Range → OfferCreationPage.tsx → fetch(/api/analytics/offers/daily?days=X) 
+→ route.ts → getDailyOffers() → PostgreSQL → Subdivision by isOfferIdea → JSON Response → D3.js
+```
+
+### **Offer Creator Percentage Data Path (Offer Creation Tab)**
+```
+User Window Selection → OfferCreationPage.tsx → fetch(/api/analytics/offers/creator-percentage) 
+→ route.ts → getOfferCreatorPercentages() → Complex Activity Queries → JSON Response → D3.js
+```
+
+### **Fallback Paths**
+```
+Daily Users: Database Error → fetch(/api/analytics/new-users/mock?days=X) → mock data
+Daily Offers: Database Error → fetch(/api/analytics/offers/daily/mock?days=X) → mock data
+Offer Creator %: Database Error → fetch(/api/analytics/offers/creator-percentage/mock) → mock data
+Cohort Analysis: No fallback (real data only)
 ```
 
 ### **Caching Strategy**
 ```
 Daily Users: 5-minute cache (real-time feel)
+Daily Offers: 5-minute cache (real-time feel)
 Cohort Analysis: 15-minute cache (analytical data)
-Both: Debounced requests (300ms) prevent API spam
+Offer Creator %: 10-minute cache (complex calculations)
+All: Debounced requests (300ms) prevent API spam
 ```
 
 ---
@@ -182,29 +244,42 @@ nohup npm run start > /tmp/analytics-dashboard.log 2>&1 &
 3. Check build status: `npm run build`
 4. Check logs: `tail -f /tmp/analytics-dashboard.log`
 
+### **"Tabs don't switch properly"**
+1. Check TabNavigation component: Tab state not updating correctly
+2. Check Dashboard.tsx: activeTab state management issues
+3. Check component mounting: Page components not rendering on tab switch
+4. Check browser console: React errors during tab transitions
+
 ### **"Chart shows 'Loading chart data...' forever"**
-1. Check API endpoint: `curl "http://localhost:3003/api/analytics/new-users?days=7"`
-2. Check database connection: Look for "Database connection unavailable" in API response
-3. Check browser network tab: Look for failed fetch requests
-4. Check React state: Loading state not clearing due to uncaught errors
+1. Check API endpoints: `curl "http://localhost:3003/api/analytics/new-users?days=7"`
+2. Check API endpoints: `curl "http://localhost:3003/api/analytics/offers/daily?days=7"`
+3. Check database connection: Look for "Database connection unavailable" in API response
+4. Check browser network tab: Look for failed fetch requests
+5. Check React state: Loading state not clearing due to uncaught errors
 
 ### **"Chart is empty or shows error message"**
-1. Check API response format: Ensure `ChartData[]` structure matches expectations
-2. Check database query: Verify users table has data with `created_at >= '2025-03-05'`
-3. Check TypeScript interfaces: API response must match `ApiResponse<ChartData[]>`
-4. Check D3.js data binding: Verify data array is not empty
+1. Check API response format: Ensure data structure matches TypeScript interfaces
+2. Check database query: Verify tables have data (users, offers) with proper date filtering
+3. Check TypeScript interfaces: API response must match expected interface types
+4. Check D3.js data binding: Verify data array is not empty and properly formatted
+
+### **"Offer creation charts not working"**
+1. Check offers table: Verify `isOfferIdea` boolean field exists and has data
+2. Check offer creator percentage queries: Complex user activity tracking may be slow
+3. Check time window calculations: 24h/72h/7d/30d/90d logic correctness
+4. Check subdivision logic: Orange (offer ideas) vs blue (regular offers) data separation
 
 ### **"Date range buttons don't work"**
-1. Check React state: `selectedDays` state not updating
+1. Check React state: Date range state not updating in correct tab
 2. Check debouncing: Timer conflicts preventing API calls
-3. Check API parameters: URL parameters not properly formatted
+3. Check API parameters: URL parameters not properly formatted for offers endpoints
 4. Check cache: Stale cache returning same data for different ranges
 
 ### **"Real data indicator missing"**
-1. Check API endpoint: Real endpoint failing, falling back to mock
+1. Check API endpoints: Real endpoints failing, falling back to mock (where available)
 2. Check database connection: Connection pool exhausted or timeout
-3. Check error handling: Errors not properly caught and handled
-4. Check conditional rendering: `chartData.length > 0 && !error` logic
+3. Check error handling: Errors not properly caught and handled per tab
+4. Check conditional rendering: Data length and error checking per tab component
 
 ---
 

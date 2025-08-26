@@ -134,3 +134,97 @@ export interface CohortColorScheme {
   createOffer: string; // Orange theme
   allActions: string; // Purple theme
 }
+
+// === OFFER CREATION ANALYTICS INTERFACES (Phase 7) ===
+
+// Daily offer creation with subdivision by source
+export interface OfferCreationData {
+  date: Date;
+  totalOffers: number;
+  offerIdeas: number; // Offers created via offer ideas feature
+  regularOffers: number; // Regular user-initiated offers
+}
+
+// Processed data for stacked bar chart visualization
+export interface OfferSubdivisionData {
+  name: string; // "Offer Ideas" or "Regular Offers"
+  value: number;
+  color: string; // Orange for offer ideas, blue for regular
+}
+
+// Offer creator percentage metrics for a specific time window
+export interface OfferCreatorMetrics {
+  timeWindow: string; // "24h", "72h", "7d", "30d", "90d"
+  activeUsers: number; // Users with any platform activity in window
+  offerCreators: number; // Users who created offers in window
+  percentage: number; // (offerCreators / activeUsers) * 100
+}
+
+// Time window options for offer creator analysis
+export type TimeWindowType = '24h' | '72h' | '7d' | '30d' | '90d';
+
+// API query parameters for offer analytics
+export interface OfferAnalyticsParams {
+  days?: number; // Predefined range (7, 14, 30, 60, 90)
+  startDate?: string; // Custom start date (YYYY-MM-DD)
+  endDate?: string; // Custom end date (YYYY-MM-DD)
+}
+
+// API response for daily offer creation data
+export interface OfferAnalyticsResponse extends ApiResponse<OfferCreationData[]> {
+  metadata: {
+    dateRange: {
+      start: string;
+      end: string;
+      days: number;
+    };
+    totals: {
+      offers: number;
+      offerIdeas: number;
+      regularOffers: number;
+    };
+  };
+}
+
+// API response for offer creator percentage analysis
+export interface OfferCreatorAnalysisResponse extends ApiResponse<OfferCreatorMetrics[]> {
+  metadata: {
+    calculatedAt: string;
+    userBaseline: string; // "Users created since March 5, 2025"
+    activityDefinition: string[]; // List of activities that define "active"
+  };
+}
+
+// === TAB NAVIGATION INTERFACES ===
+
+// Available tab types
+export type TabType = 'new-users' | 'offer-creation';
+
+// Tab configuration for navigation component
+export interface TabConfig {
+  id: TabType;
+  label: string;
+  description?: string;
+  href?: string; // Optional for URL routing
+}
+
+// Chart configuration for offer creation visualizations
+export interface OfferChartConfig {
+  width: number;
+  height: number;
+  margin: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  colors: {
+    offerIdeas: string; // Orange theme
+    regularOffers: string; // Blue theme
+    percentage: string; // Purple theme for percentage bars
+  };
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+}

@@ -302,6 +302,166 @@ export async function getCohortAnalysis(
   return result.rows.reverse(); // Reverse to get chronological order (oldest first)
 }
 
+// Get daily offers aggregated by day with isOfferIdea subdivision
+export async function getDailyOffers(
+  startDate?: string,
+  endDate?: string
+): Promise<{ date: Date; totalOffers: number; offerIdeas: number; regularOffers: number }[]> {
+  
+  // Default to last 30 days if no range specified
+  const defaultEndDate = new Date().toISOString().split('T')[0];
+  const defaultStartDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString().split('T')[0];
+  
+  const actualStartDate = startDate || defaultStartDate;
+  const actualEndDate = endDate || defaultEndDate;
+  
+  const query = `
+    SELECT 
+      DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago') as date,
+      COUNT(*) as total_offers,
+      SUM(CASE WHEN is_offer_idea = true THEN 1 ELSE 0 END) as offer_ideas,
+      SUM(CASE WHEN is_offer_idea = false THEN 1 ELSE 0 END) as regular_offers
+    FROM offers 
+    WHERE created_at >= $1::date 
+    AND created_at < ($2::date + INTERVAL '1 day')
+    AND deleted_at = 0
+    GROUP BY DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')
+    ORDER BY date ASC
+  `;
+  
+  const result = await executeQuery<{ 
+    date: Date; 
+    total_offers: string; 
+    offer_ideas: string; 
+    regular_offers: string; 
+  }>(query, [actualStartDate, actualEndDate]);
+  
+  return result.rows.map(row => ({
+    date: row.date,
+    totalOffers: parseInt(row.total_offers, 10),
+    offerIdeas: parseInt(row.offer_ideas, 10),
+    regularOffers: parseInt(row.regular_offers, 10)
+  }));
+}
+
+// Get offer creator percentage analysis across multiple time windows
+export async function getOfferCreatorPercentages(): Promise<{
+  timeWindow: string;
+  activeUsers: number;
+  offerCreators: number;
+  percentage: number;
+}[]> {
+  
+  const query = `
+    WITH time_windows AS (
+      SELECT '24h' as window, INTERVAL '24 hours' as interval_duration
+      UNION ALL SELECT '72h', INTERVAL '72 hours'
+      UNION ALL SELECT '7d', INTERVAL '7 days'  
+      UNION ALL SELECT '30d', INTERVAL '30 days'
+      UNION ALL SELECT '90d', INTERVAL '90 days'
+    ),
+    window_calculations AS (
+      SELECT 
+        tw.window,
+        
+        -- Count active users (any platform activity) in time window
+        (SELECT COUNT(DISTINCT u.id)
+         FROM users u
+         WHERE u.deleted_at = 0
+         AND u.created_at >= '2025-03-05'
+         AND (
+           -- User login/activity (approximate via device usage)
+           EXISTS (SELECT 1 FROM devices d WHERE d.user_id = u.id 
+                   AND d.updated_at >= CURRENT_TIMESTAMP - tw.interval_duration)
+           -- Offer creation activity
+           OR EXISTS (SELECT 1 FROM offers o WHERE o.creator_user_id = u.id 
+                      AND o.created_at >= CURRENT_TIMESTAMP - tw.interval_duration
+                      AND o.deleted_at = 0)
+           -- Inventory addition activity
+           OR EXISTS (SELECT 1 FROM inventory_items ii WHERE ii.user_id = u.id 
+                      AND ii.created_at >= CURRENT_TIMESTAMP - tw.interval_duration
+                      AND ii.deleted_at = 0)
+           -- Wishlist addition activity  
+           OR EXISTS (SELECT 1 FROM wishlist_items wi WHERE wi.user_id = u.id 
+                      AND wi.created_at >= CURRENT_TIMESTAMP - tw.interval_duration
+                      AND wi.deleted_at = 0)
+         )) as active_users,
+         
+        -- Count users who created offers in time window  
+        (SELECT COUNT(DISTINCT o.creator_user_id)
+         FROM offers o
+         JOIN users u ON o.creator_user_id = u.id
+         WHERE o.created_at >= CURRENT_TIMESTAMP - tw.interval_duration
+         AND o.deleted_at = 0
+         AND u.deleted_at = 0
+         AND u.created_at >= '2025-03-05') as offer_creators
+         
+      FROM time_windows tw
+    )
+    SELECT 
+      window as time_window,
+      active_users,
+      offer_creators,
+      CASE 
+        WHEN active_users > 0 THEN ROUND(offer_creators * 100.0 / active_users, 2)
+        ELSE 0 
+      END as percentage
+    FROM window_calculations
+    ORDER BY 
+      CASE window 
+        WHEN '24h' THEN 1
+        WHEN '72h' THEN 2  
+        WHEN '7d' THEN 3
+        WHEN '30d' THEN 4
+        WHEN '90d' THEN 5
+      END
+  `;
+  
+  const result = await executeQuery<{
+    time_window: string;
+    active_users: string;
+    offer_creators: string; 
+    percentage: string;
+  }>(query);
+  
+  return result.rows.map(row => ({
+    timeWindow: row.time_window,
+    activeUsers: parseInt(row.active_users, 10),
+    offerCreators: parseInt(row.offer_creators, 10),
+    percentage: parseFloat(row.percentage)
+  }));
+}
+
+// Get total offer count for summary statistics
+export async function getTotalOfferCount(
+  startDate?: string,
+  endDate?: string
+): Promise<number> {
+  
+  const defaultEndDate = new Date().toISOString().split('T')[0];
+  const defaultStartDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString().split('T')[0];
+  
+  const actualStartDate = startDate || defaultStartDate;
+  const actualEndDate = endDate || defaultEndDate;
+  
+  const query = `
+    SELECT COUNT(*) as total
+    FROM offers 
+    WHERE created_at >= $1::date 
+    AND created_at < ($2::date + INTERVAL '1 day')
+    AND deleted_at = 0
+  `;
+  
+  const result = await executeQuery<{ total: string }>(
+    query, 
+    [actualStartDate, actualEndDate]
+  );
+  
+  return parseInt(result.rows[0]?.total || '0', 10);
+}
+
 // Graceful pool shutdown for application cleanup
 export async function closeDatabasePool(): Promise<void> {
   try {
