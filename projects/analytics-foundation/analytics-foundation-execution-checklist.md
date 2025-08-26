@@ -588,7 +588,228 @@
 
 ---
 
-## Phase 7: Testing & Quality Assurance
+## Phase 7: Offer Creation Analytics Tab Implementation
+**Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect guidance
+**Database Lead:** @squad-agent-database-master
+
+### **Objective**: Implement a second analytics tab focused on offer creation metrics with dual visualizations: daily offer creation (subdivided by offer idea source) and offer creator percentage analysis across multiple time windows
+
+- [ ] **@vercel-debugger**: Create new feature branch following `@technical-standard-approaches.md`
+
+### **Tab Navigation Architecture**
+**Primary Owner:** @squad-agent-architect with @project-agent-dev-hub-dev
+
+- [ ] Design tab navigation system architecture:
+  - [ ] Plan tab switching component structure (TabNavigation.tsx)
+  - [ ] Design URL routing strategy for tab persistence 
+  - [ ] Plan shared layout components between tabs
+  - [ ] Ensure consistent header and navigation patterns
+- [ ] Update `@analytics-dashboard-code-overview.md` with new tab architecture:
+  - [ ] Document tab navigation component hierarchy
+  - [ ] Update data flow diagrams for dual-tab system
+  - [ ] Document routing and state management patterns
+  - [ ] Add troubleshooting guides for tab-specific issues
+- [ ] Design offer creation page layout:
+  - [ ] Plan dual-chart layout for offer analytics
+  - [ ] Design responsive grid system for offer visualizations
+  - [ ] Plan controls and filtering UI patterns
+  - [ ] Ensure visual consistency with existing new users tab
+
+### **Database Analysis & Query Development**
+**Primary Owner:** @squad-agent-database-master
+
+- [ ] Analyze offer creation data requirements:
+  - [ ] Study `model Offer` schema for `isOfferIdea` boolean field
+  - [ ] Identify optimal indexing strategy for offer queries
+  - [ ] Plan efficient date range filtering for offer creation
+  - [ ] Document data quality considerations for offer analytics
+- [ ] Design daily offer creation query logic:
+  - [ ] Create aggregation query for offers created per day
+  - [ ] Implement subdivision logic for `isOfferIdea` vs regular offers
+  - [ ] Add proper date filtering and CST timezone alignment
+  - [ ] Optimize query performance for date range selections
+- [ ] Design offer creator percentage analysis queries:
+  - [ ] Create complex user activity tracking queries for 24h/72h/7d/30d/90d windows
+  - [ ] Calculate "active users" for each time window (users with any platform activity)
+  - [ ] Calculate "offer creators" subset within each active user group
+  - [ ] Generate percentage calculations with proper rounding
+- [ ] Optimize query performance:
+  - [ ] Use EXPLAIN ANALYZE to validate query efficiency
+  - [ ] Ensure all queries complete within 400ms target
+  - [ ] Implement proper error handling for edge cases
+  - [ ] Design efficient caching strategies for complex calculations
+- [ ] Create test queries and validate data accuracy:
+  - [ ] Test with various date ranges and edge cases
+  - [ ] Validate offer idea vs regular offer subdivision accuracy
+  - [ ] Spot-check percentage calculations against manual verification
+  - [ ] Test performance with large datasets
+
+### **TypeScript Interface Design**
+**Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect review
+
+- [ ] Design offer analytics interfaces in `src/types/analytics.ts`:
+  - [ ] `OfferCreationData` interface for daily offer metrics
+  - [ ] `OfferSubdivisionData` interface for offer idea breakdown
+  - [ ] `OfferCreatorMetrics` interface for percentage analysis
+  - [ ] `TimeWindowType` enum for activity window selections (24h, 72h, 7d, 30d, 90d)
+- [ ] Design API response interfaces:
+  - [ ] `OfferAnalyticsResponse` extending existing `ApiResponse<T>` pattern
+  - [ ] `OfferCreatorAnalysisResponse` for percentage data
+  - [ ] Ensure compatibility with existing error handling patterns
+- [ ] Create chart configuration interfaces:
+  - [ ] `OfferChartConfig` for D3.js visualization settings
+  - [ ] `SubdivisionColorScheme` for offer idea vs regular offer colors
+  - [ ] `TimeWindowChartConfig` for percentage analysis visualization
+
+### **API Endpoint Development**
+**Primary Owner:** @project-agent-dev-hub-dev
+
+- [ ] Create daily offer creation API route `app/api/analytics/offers/daily/route.ts`:
+  - [ ] Implement GET endpoint with date range parameter support
+  - [ ] Support subdivision by `isOfferIdea` boolean field
+  - [ ] Integrate with database query functions from @squad-agent-database-master
+  - [ ] Add comprehensive error handling and parameter validation
+- [ ] Create offer creator percentage API route `app/api/analytics/offers/creator-percentage/route.ts`:
+  - [ ] Implement GET endpoint for time window analysis
+  - [ ] Support multiple time window calculations (24h, 72h, 7d, 30d, 90d)
+  - [ ] Calculate active users and offer creators for each window
+  - [ ] Format percentage responses with proper metadata
+- [ ] Implement response formatting:
+  - [ ] Transform database results to chart-ready formats
+  - [ ] Calculate percentage values with consistent rounding
+  - [ ] Include metadata (total offers, active users, time windows)
+- [ ] Add performance monitoring:
+  - [ ] Database connection health checks
+  - [ ] Query timeout handling (400ms target)
+  - [ ] Cache headers for optimal performance (5-minute cache)
+- [ ] Create mock data endpoints for development:
+  - [ ] `app/api/analytics/offers/daily/mock/route.ts`
+  - [ ] `app/api/analytics/offers/creator-percentage/mock/route.ts`
+  - [ ] Generate realistic offer creation patterns and percentages
+
+### **Tab Navigation Implementation**
+**Primary Owner:** @project-agent-dev-hub-dev
+
+- [ ] Create tab navigation component `src/components/ui/TabNavigation.tsx`:
+  - [ ] Implement clean tab switcher with active state styling
+  - [ ] Support "New Users" and "Offer Creation" tabs
+  - [ ] Add smooth transitions and hover effects
+  - [ ] Ensure accessibility and keyboard navigation
+- [ ] Update main dashboard layout `src/components/layout/Dashboard.tsx`:
+  - [ ] Integrate tab navigation at the top level
+  - [ ] Implement tab state management with React hooks
+  - [ ] Add URL routing for tab persistence (optional)
+  - [ ] Maintain existing new users functionality
+- [ ] Create offer creation page component `src/components/pages/OfferCreationPage.tsx`:
+  - [ ] Design dual-chart layout structure
+  - [ ] Implement consistent styling with new users page
+  - [ ] Add proper spacing and responsive design
+  - [ ] Include appropriate headers and descriptions
+
+### **D3.js Visualization Components**
+**Primary Owner:** @project-agent-dev-hub-dev
+
+- [ ] Create subdivided bar chart `src/components/charts/DailyOffersChart.tsx`:
+  - [ ] Follow existing D3.js + React integration patterns
+  - [ ] Implement stacked/grouped bars for offer idea subdivision
+  - [ ] Use color coding: offer ideas (orange) vs regular offers (blue)
+  - [ ] Add responsive SVG with configurable dimensions
+  - [ ] Implement smooth transitions for data updates
+- [ ] Create percentage analysis chart `src/components/charts/OfferCreatorPercentageChart.tsx`:
+  - [ ] Implement horizontal or vertical bar chart for time windows
+  - [ ] Display percentage values clearly on each bar
+  - [ ] Add clear labeling for time windows (24h, 72h, 7d, 30d, 90d)
+  - [ ] Include total active users context in tooltips
+- [ ] Add interactive features to both charts:
+  - [ ] Hover tooltips with detailed breakdown information
+  - [ ] Smooth animations and transitions
+  - [ ] Loading states during data fetching
+  - [ ] Consistent error handling and empty states
+- [ ] Create time window toggle component `src/components/ui/TimeWindowToggle.tsx`:
+  - [ ] Support multiple time window selections
+  - [ ] Consistent styling with existing toggle components
+  - [ ] Proper TypeScript props and callback handling
+
+### **Dashboard Integration & Testing**
+**Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect review
+
+- [ ] Integrate offer creation page into main dashboard:
+  - [ ] Add tab routing and state management
+  - [ ] Implement data fetching for offer analytics
+  - [ ] Add 5-minute caching strategy consistent with existing patterns
+  - [ ] Add 300ms debouncing for rapid control changes
+- [ ] Add loading and error states:
+  - [ ] Loading spinners during offer data fetching
+  - [ ] Error boundaries with retry functionality
+  - [ ] Fallback to mock data on API failures (daily offers only)
+  - [ ] User-friendly error messages for complex queries
+- [ ] Ensure responsive design:
+  - [ ] Mobile-friendly layout for offer charts
+  - [ ] Proper spacing and alignment with existing patterns
+  - [ ] Test tab navigation on different screen sizes
+  - [ ] Optimize chart dimensions for various viewports
+- [ ] Performance optimization:
+  - [ ] Implement debouncing for rapid tab switches
+  - [ ] Cache management across tabs
+  - [ ] Monitor API response times for complex percentage queries
+  - [ ] Optimize D3.js rendering for larger datasets
+
+### **Testing & Validation**
+**Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect review
+
+- [ ] End-to-end functionality testing:
+  - [ ] Verify tab navigation works smoothly
+  - [ ] Test both offer creation charts display correctly
+  - [ ] Confirm offer idea subdivision accuracy
+  - [ ] Validate percentage calculations across all time windows
+  - [ ] Test with various date ranges and edge cases
+- [ ] Performance validation:
+  - [ ] API response times under 400ms for daily offers
+  - [ ] Complex percentage queries complete within reasonable time (<10s)
+  - [ ] Charts render smoothly with multiple months of data
+  - [ ] No memory leaks during tab switching
+  - [ ] Database queries perform efficiently
+- [ ] Data accuracy validation:
+  - [ ] Spot-check offer counts against database
+  - [ ] Verify offer idea vs regular offer subdivision
+  - [ ] Validate percentage calculations manually
+  - [ ] Test timezone handling for offer creation dates
+  - [ ] Confirm active user calculations are accurate
+- [ ] UI/UX validation:
+  - [ ] Tab navigation is intuitive and responsive
+  - [ ] Charts display comprehensive and clear information
+  - [ ] Color schemes are accessible and visually distinct
+  - [ ] Tooltips provide valuable context
+  - [ ] Error states are helpful and actionable
+
+### **Build & Integration Testing**
+**Primary Owner:** @project-agent-dev-hub-dev
+
+- [ ] TypeScript compilation validation:
+  - [ ] All new interfaces compile without errors
+  - [ ] No type conflicts with existing code
+  - [ ] Absolute import paths work correctly for new components
+- [ ] Component integration testing:
+  - [ ] New tab components integrate seamlessly with existing dashboard
+  - [ ] No conflicts with existing new users functionality
+  - [ ] Consistent styling and behavior across tabs
+  - [ ] Tab state management works correctly
+- [ ] API endpoint testing:
+  - [ ] Both offer analytics endpoints return valid JSON
+  - [ ] Response formats match TypeScript interfaces
+  - [ ] Error handling works correctly for complex queries
+  - [ ] Mock endpoints provide realistic test data
+
+### **Project Management Tasks**
+
+- [ ] **Phase Review by the Conductor:** The conductor must systematically review the execution checklist for this phase, marking completed tasks and documenting any deviations
+- [ ] **Phase Worklog Entry by the Scribe:** The scribe agent must create a worklog entry summarizing this completed phase
+- [ ] **Phase GitHub commit by the @vercel-debugger:** Commit this now completed phase-branch to Github, following standard approaches and safety protocols
+- [ ] **Delete feature branch:** After merging, the @vercel-debugger will delete the feature branch from local and remote repositories
+
+---
+
+## Phase X: Testing & Quality Assurance
 **Primary Owner:** @project-agent-dev-hub-dev with @squad-agent-architect review
 
 - [ ] Review all tasks for this phase. Is there anything to tweak based on what we discovered, learned, or changed in the previous phase?
