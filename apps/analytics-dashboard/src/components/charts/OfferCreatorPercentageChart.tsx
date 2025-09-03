@@ -61,24 +61,24 @@ export default function OfferCreatorPercentageChart({
     const g = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Set up scales
-    const yScale = d3.scaleBand()
+    // Set up scales - X = time windows, Y = percentages
+    const xScale = d3.scaleBand()
       .domain(data.map(d => d.timeWindow))
-      .range([0, innerHeight])
+      .range([0, innerWidth])
       .padding(0.2);
 
-    const xScale = d3.scaleLinear()
+    const yScale = d3.scaleLinear()
       .domain([0, d3.max(data, d => d.percentage) || 0])
-      .range([0, innerWidth])
+      .range([innerHeight, 0])
       .nice();
 
     // Create axes
     const xAxis = d3.axisBottom(xScale)
-      .tickFormat(d => d + "%")
+      .tickFormat(d => TIME_WINDOW_LABELS[d as keyof typeof TIME_WINDOW_LABELS] || d)
       .tickSizeOuter(0);
 
     const yAxis = d3.axisLeft(yScale)
-      .tickFormat(d => TIME_WINDOW_LABELS[d as keyof typeof TIME_WINDOW_LABELS] || d)
+      .tickFormat(d => d + "%")
       .tickSizeOuter(0);
 
     // Add X axis
@@ -102,7 +102,7 @@ export default function OfferCreatorPercentageChart({
       .style("text-anchor", "middle")
       .style("font-size", "14px")
       .style("fill", "#475569") // slate-600
-      .text("Percentage of Active Users");
+      .text("Time Window");
 
     g.append("text")
       .attr("transform", "rotate(-90)")
@@ -112,7 +112,7 @@ export default function OfferCreatorPercentageChart({
       .style("text-anchor", "middle")
       .style("font-size", "14px")
       .style("fill", "#475569") // slate-600
-      .text("Time Window");
+      .text("Percentage of Active Users");
 
     // Create tooltip
     const tooltip = d3.select("body").append("div")
@@ -133,10 +133,10 @@ export default function OfferCreatorPercentageChart({
       .enter()
       .append("rect")
       .attr("class", "percentage-bar")
-      .attr("x", 0)
-      .attr("y", d => yScale(d.timeWindow)!)
-      .attr("width", 0) // Start with 0 width for animation
-      .attr("height", yScale.bandwidth())
+      .attr("x", d => xScale(d.timeWindow)!)
+      .attr("y", innerHeight) // Start from bottom for animation
+      .attr("width", xScale.bandwidth())
+      .attr("height", 0) // Start with 0 height for animation
       .attr("fill", PERCENTAGE_COLOR)
       .style("opacity", 0.8)
       .on("mouseover", function(event, d) {
@@ -190,20 +190,22 @@ export default function OfferCreatorPercentageChart({
       .duration(800)
       .delay((d, i) => i * 100) // Staggered animation
       .ease(d3.easeQuadOut)
-      .attr("width", d => xScale(d.percentage));
+      .attr("y", d => yScale(d.percentage))
+      .attr("height", d => innerHeight - yScale(d.percentage));
 
-    // Add percentage labels on bars
+    // Add percentage labels on top of bars
     g.selectAll(".percentage-label")
       .data(data)
       .enter()
       .append("text")
       .attr("class", "percentage-label")
-      .attr("x", d => xScale(d.percentage) + 8)
-      .attr("y", d => yScale(d.timeWindow)! + yScale.bandwidth() / 2)
+      .attr("x", d => xScale(d.timeWindow)! + xScale.bandwidth() / 2)
+      .attr("y", d => yScale(d.percentage) - 8)
       .attr("dy", "0.35em")
       .style("font-size", "12px")
       .style("font-weight", "600")
       .style("fill", "#374151") // gray-700
+      .style("text-anchor", "middle")
       .style("opacity", 0)
       .text(d => `${d.percentage}%`)
       .transition()
@@ -212,14 +214,14 @@ export default function OfferCreatorPercentageChart({
       .ease(d3.easeQuadOut)
       .style("opacity", 1);
 
-    // Add user count labels inside bars (if bars are wide enough)
+    // Add user count labels inside bars (if bars are tall enough)
     g.selectAll(".user-count-label")
-      .data(data.filter(d => xScale(d.percentage) > 100)) // Only show if bar is wide enough
+      .data(data.filter(d => innerHeight - yScale(d.percentage) > 25)) // Only show if bar is tall enough
       .enter()
       .append("text")
       .attr("class", "user-count-label")
-      .attr("x", d => xScale(d.percentage) / 2)
-      .attr("y", d => yScale(d.timeWindow)! + yScale.bandwidth() / 2)
+      .attr("x", d => xScale(d.timeWindow)! + xScale.bandwidth() / 2)
+      .attr("y", d => yScale(d.percentage) + (innerHeight - yScale(d.percentage)) / 2)
       .attr("dy", "0.35em")
       .style("font-size", "11px")
       .style("font-weight", "500")

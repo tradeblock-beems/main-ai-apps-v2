@@ -346,7 +346,7 @@ export async function getDailyOffers(
 }
 
 // Get offer creator percentage analysis across multiple time windows
-// Basic implementation with static results for Phase 7 completion
+// Uses proven query building block pattern #1 (User Activity & Status) for accurate last_active filtering
 export async function getOfferCreatorPercentages(): Promise<{
   timeWindow: string;
   activeUsers: number;
@@ -355,7 +355,6 @@ export async function getOfferCreatorPercentages(): Promise<{
 }[]> {
   
   try {
-    // Simple query to get basic offer counts for each time window
     const timeWindows = [
       { window: '24h', hours: 24 },
       { window: '72h', hours: 72 },
@@ -367,20 +366,39 @@ export async function getOfferCreatorPercentages(): Promise<{
     const results = [];
     
     for (const tw of timeWindows) {
+      // EXACT REPLICATION: Based on proven generate_active_user_report.py pattern
+      // Removed March 5 filter and redundant WHERE conditions to match working script
       const query = `
-        SELECT COUNT(DISTINCT creator_user_id) as offer_creators
-        FROM offers 
-        WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${tw.hours} hours'
-        AND deleted_at = 0
+        SELECT
+          -- Active Users: users with last_active in time window
+          COUNT(DISTINCT u.id) FILTER (WHERE ua.last_active >= CURRENT_TIMESTAMP - INTERVAL '${tw.hours} hours') AS active_users,
+          
+          -- Offer Creators: among active users, who also created offers in same time window
+          COUNT(DISTINCT CASE 
+            WHEN o.created_at >= CURRENT_TIMESTAMP - INTERVAL '${tw.hours} hours' 
+            THEN u.id 
+          END) AS offer_creators
+          
+        FROM users u
+        JOIN user_activities ua ON u.id = ua.user_id
+        LEFT JOIN offers o ON u.id = o.creator_user_id 
+          AND o.created_at >= CURRENT_TIMESTAMP - INTERVAL '${tw.hours} hours'
+          AND o.deleted_at = 0
+        WHERE u.deleted_at = 0
+          AND ua.last_active >= CURRENT_TIMESTAMP - INTERVAL '90 days'
       `;
       
-      const result = await executeQuery<{ offer_creators: string }>(query);
+      const result = await executeQuery<{ 
+        active_users: string; 
+        offer_creators: string; 
+      }>(query);
+      
+      const activeUsers = parseInt(result.rows[0]?.active_users || '0', 10);
       const offerCreators = parseInt(result.rows[0]?.offer_creators || '0', 10);
       
-      // For Phase 7, use a simplified calculation
-      // Active users = offer creators * 8 (rough approximation)
-      const activeUsers = offerCreators * 8;
-      const percentage = activeUsers > 0 ? Math.round((offerCreators / activeUsers) * 100 * 100) / 100 : 0;
+      // Calculate accurate percentage based on real data
+      const percentage = activeUsers > 0 ? 
+        Math.round((offerCreators / activeUsers) * 100 * 100) / 100 : 0;
       
       results.push({
         timeWindow: tw.window,
@@ -393,16 +411,10 @@ export async function getOfferCreatorPercentages(): Promise<{
     return results;
     
   } catch (error) {
-    console.error('Error in getOfferCreatorPercentages:', error);
+    console.error('CRITICAL ERROR in getOfferCreatorPercentages:', error);
     
-    // Return basic fallback data for Phase 7 completion
-    return [
-      { timeWindow: '24h', activeUsers: 400, offerCreators: 50, percentage: 12.5 },
-      { timeWindow: '72h', activeUsers: 600, offerCreators: 65, percentage: 10.83 },
-      { timeWindow: '7d', activeUsers: 850, offerCreators: 85, percentage: 10.0 },
-      { timeWindow: '30d', activeUsers: 1200, offerCreators: 110, percentage: 9.17 },
-      { timeWindow: '90d', activeUsers: 1800, offerCreators: 145, percentage: 8.06 }
-    ];
+    // Re-throw error instead of masking with fallback data
+    throw new Error(`Database query failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

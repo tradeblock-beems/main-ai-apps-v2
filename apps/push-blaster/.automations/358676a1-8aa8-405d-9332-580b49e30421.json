@@ -9,7 +9,7 @@
     "timezone": "America/Chicago",
     "frequency": "daily",
     "startDate": "2025-08-12",
-    "executionTime": "11:53",
+    "executionTime": "12:30",
     "leadTimeMinutes": 30
   },
   "template": {
@@ -95,5 +95,5 @@
     "failedExecutions": 0
   },
   "createdAt": "2025-08-12T03:48:10.318Z",
-  "updatedAt": "2025-08-25T16:21:31.048Z"
+  "updatedAt": "2025-08-26T14:03:11.561Z"
 }

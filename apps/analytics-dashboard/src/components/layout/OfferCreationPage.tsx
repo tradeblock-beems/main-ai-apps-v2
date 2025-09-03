@@ -194,13 +194,14 @@ export default function OfferCreationPage({ className = '' }: OfferCreationPageP
 
   // Force refresh functions
   const refreshDailyOffers = () => {
+    console.log('DEBUG: refreshDailyOffers called - clearing cache and forcing refresh');
     setDailyOffersCache(new Map());
-    fetchDailyOffers(selectedDays, true);
+    fetchDailyOffers(selectedDays, true); // Pass forceRefresh = true
   };
 
   const refreshCreatorPercentages = () => {
     setCreatorPercentageCache(null);
-    fetchCreatorPercentages(true);
+    fetchCreatorPercentages(true); // Pass forceRefresh = true
   };
 
   // Initial data loading

@@ -8,8 +8,8 @@
 import { config } from 'dotenv';
 import { join } from 'path';
 
-// Load environment variables from the project root .env file
-config({ path: join(process.cwd(), '../../.env') });
+// Load environment variables from the project root .env file  
+config({ path: '/Users/AstroLab/Desktop/code-projects/main-ai-apps/.env' });
 
 // Database configuration
 export const DATABASE_URL = process.env.DATABASE_URL;

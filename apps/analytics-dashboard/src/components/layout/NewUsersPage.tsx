@@ -43,30 +43,42 @@ export default function NewUsersPage({ className = '' }: NewUsersPageProps) {
 
   // Fetch daily users data
   const fetchData = useCallback(async (days: number, forceRefresh = false) => {
+    console.log(`DEBUG: fetchData called with days=${days}, forceRefresh=${forceRefresh}`);
     const cacheKey = days.toString();
     const cached = cache.get(cacheKey);
     const now = Date.now();
     
     // Use cache if available and not stale (5 minutes)
     if (!forceRefresh && cached && (now - cached.timestamp < 5 * 60 * 1000)) {
+      console.log('DEBUG: Using cached data instead of fetching fresh');
       setChartData(cached.data);
       setIsLoading(false);
       return;
     }
     
+    console.log('DEBUG: Fetching fresh data from API');
+    
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(`/api/analytics/new-users?days=${days}`);
+      // Add cache busting parameter to ensure fresh data
+      const cacheBuster = forceRefresh ? `&_t=${Date.now()}` : '';
+      const url = `/api/analytics/new-users?days=${days}${cacheBuster}`;
+      console.log('DEBUG: Fetching URL:', url);
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const result: ApiResponse<ChartData[]> = await response.json();
+      console.log('DEBUG: API response:', result);
       
       if (result.success && result.data.length > 0) {
+        console.log('DEBUG: Setting new chart data, length:', result.data.length);
+        console.log('DEBUG: Latest date in data:', result.data[result.data.length - 1]);
         setChartData(result.data);
         
         // Update cache
@@ -97,31 +109,41 @@ export default function NewUsersPage({ className = '' }: NewUsersPageProps) {
 
   // Fetch cohort analysis data (Phase 6.5)
   const fetchCohortData = useCallback(async (periodType: CohortPeriodType, forceRefresh = false) => {
-    const periods = periodType === 'monthly' ? 12 : 18; // 12 months or 18 weeks
+    console.log(`DEBUG: fetchCohortData called with period=${periodType}, forceRefresh=${forceRefresh}`);
+    const periods = periodType === 'monthly' ? 12 : 12; // 12 months or 12 weeks
     const cacheKey = `${periodType}-${periods}`;
     const cached = cohortCache.get(cacheKey);
     const now = Date.now();
     
     // Use cache if available and not stale (15 minutes)
     if (!forceRefresh && cached && (now - cached.timestamp < 15 * 60 * 1000)) {
+      console.log('DEBUG: Using cached cohort data instead of fetching fresh');
       setCohortData(cached.data);
       setCohortLoading(false);
       return;
     }
     
+    console.log('DEBUG: Fetching fresh cohort data from API');
     setCohortLoading(true);
     setCohortError(null);
     
     try {
-      const response = await fetch(`/api/analytics/cohort-analysis?period=${periodType}&months=${periods}`);
+      // Add cache busting parameter to ensure fresh data
+      const cacheBuster = forceRefresh ? `&_t=${Date.now()}` : '';
+      const url = `/api/analytics/cohort-analysis?period=${periodType}&months=${periods}${cacheBuster}`;
+      console.log('DEBUG: Fetching cohort URL:', url);
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const result: ApiResponse<CohortData[]> = await response.json();
+      console.log('DEBUG: Cohort API response:', result);
       
       if (result.success && result.data.length > 0) {
+        console.log('DEBUG: Setting new cohort data, length:', result.data.length);
         setCohortData(result.data);
         
         // Update cache
@@ -180,13 +202,15 @@ export default function NewUsersPage({ className = '' }: NewUsersPageProps) {
 
   // Force refresh data (bypass cache)
   const refreshDailyUsers = () => {
+    console.log('DEBUG: refreshDailyUsers called - clearing cache and forcing refresh');
     setCache(new Map()); // Clear cache
-    fetchData(selectedDays, true);
+    fetchData(selectedDays, true); // Pass forceRefresh = true
   };
 
   const refreshCohortData = () => {
+    console.log('DEBUG: refreshCohortData called - clearing cache and forcing refresh');
     setCohortCache(new Map()); // Clear cache
-    fetchCohortData(selectedPeriod, true);
+    fetchCohortData(selectedPeriod, true); // Pass forceRefresh = true
   };
 
   // Initial data loading

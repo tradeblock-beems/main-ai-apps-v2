@@ -75,7 +75,8 @@ export default function NewUsersBarChart({
       .call(d3.axisBottom(xScale)
         .tickValues(tickValues)
         .tickFormat(d => {
-          const date = new Date(d);
+          // Parse date string properly to avoid timezone issues
+          const date = new Date(d + 'T12:00:00'); // Add noon time to avoid timezone shift
           return d3.timeFormat("%m/%d")(date);
         })
         .tickSizeOuter(0))
@@ -136,7 +137,8 @@ export default function NewUsersBarChart({
           .duration(200)
           .style("opacity", .9);
         
-        const date = new Date(d.date);
+        // Fix timezone issue by adding noon time to avoid date shift
+        const date = new Date(d.date + 'T12:00:00');
         const formattedDate = d3.timeFormat("%B %d, %Y")(date);
         
         tooltip.html(`

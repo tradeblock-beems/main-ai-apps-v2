@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-08-28T01:06:28.539439",
+  "active_users": {
+    "24 hours": 3042,
+    "72 hours": 5794,
+    "7 days": 9196,
+    "30 days": 21906
+  },
+  "offer_created_events": {
+    "24 hours": 730,
+    "72 hours": 3255,
+    "7 days": 8376,
+    "30 days": 33323
+  },
+  "queries_executed": 8
+}

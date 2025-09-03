@@ -24,7 +24,7 @@
       "@/types/*": ["./src/types/*"],
       "@/lib/*": ["./src/lib/*"],
       "@/components/*": ["./src/components/*"],
-      "@/config": ["../../basic_capabilities/internal_db_queries_toolbox/config"]
+      "@/config": ["/Users/AstroLab/Desktop/code-projects/main-ai-apps/basic_capabilities/internal_db_queries_toolbox/config"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

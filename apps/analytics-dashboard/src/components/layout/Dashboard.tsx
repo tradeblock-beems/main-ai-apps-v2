@@ -46,7 +46,7 @@ export default function Dashboard({ className = "" }: DashboardProps) {
           <div className="py-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Analytics Dashboard</h1>
+                <h1 className="text-2xl font-bold text-red-600">🔴 DEBUG MODE - Analytics Dashboard</h1>
                 <p className="mt-1 text-sm text-slate-600">
                   Real-time analytics and user engagement metrics
                 </p>

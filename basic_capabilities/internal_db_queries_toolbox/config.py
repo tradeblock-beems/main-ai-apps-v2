@@ -32,12 +32,22 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 # --- Figma API Access Token ---
 FIGMA_ACCESS_TOKEN = os.getenv("FIGMA_ACCESS_TOKEN")
 
-# --- PostHog API Secret Key ---
+# --- PostHog API Configuration ---
 POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
+POSTHOG_API_URL = os.getenv("POSTHOG_API_URL")
+POSTHOG_PROJECT_ID = os.getenv("POSTHOG_PROJECT_ID")
 
 # --- Mailjet API Keys ---
 MAILJET_API_KEY = os.getenv("MAILJET_API_KEY")
 MAILJET_API_SECRET = os.getenv("MAILJET_API_SECRET")
+
+# Utility function to get secrets (following technical standards)
+def get_secret(key_name):
+    """
+    Get a secret/environment variable by key name.
+    This is the standardized way to access secrets across the application.
+    """
+    return os.getenv(key_name)
 
 # You can add a simple check to ensure variables are loaded
 if not all([DATABASE_URL, GRAPHQL_ENDPOINT, GRAPHQL_API_KEY]):

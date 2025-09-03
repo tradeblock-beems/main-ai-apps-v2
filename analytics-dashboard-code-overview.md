@@ -189,6 +189,59 @@ All: Debounced requests (300ms) prevent API spam
 
 ---
 
+## 🎯 Common Pitfalls & Prevention
+
+### **Date/Timezone Handling Across D3.js Charts**
+**Pattern**: Every chart component has 2-3 places where dates are parsed - data preparation, x-axis tickFormat, and tooltip formatting.
+
+**Pitfall**: `new Date("2025-08-27")` creates midnight UTC, which may display as previous day in local timezone.
+
+**Prevention**:
+```javascript
+// ✅ CONSISTENT PATTERN across all charts:
+// 1. Data preparation
+const dateString = new Date(apiData.date).toLocaleDateString('en-CA');
+const originalDate = new Date(apiData.date);
+
+// 2. X-axis tickFormat  
+.tickFormat(d => {
+  const date = new Date(d + 'T12:00:00'); // Add noon to prevent timezone shift
+  return d3.timeFormat("%m/%d")(date);
+})
+
+// 3. Tooltip formatting
+const date = new Date(d.date + 'T12:00:00'); // Same pattern
+const formattedDate = d3.timeFormat("%B %d, %Y")(date);
+```
+
+### **Development Environment State Management**
+**Pattern**: Multiple server processes can run simultaneously (production + development), causing stale code confusion.
+
+**Pitfall**: File changes appear to have no effect because the wrong server is serving the UI.
+
+**Prevention**:
+1. **Always check processes**: `ps aux | grep -E "(npm run|next-server)"`
+2. **Kill ALL before starting**: `pkill -f "npm run"`
+3. **Use development mode for changes**: `npm run dev` enables hot reloading
+4. **Add visual test changes**: Confirm file changes are applied with obvious UI modifications
+
+### **Cache vs Refresh Behavior**
+**Pattern**: Refresh buttons should clear cache and force fresh API calls with loading indicators.
+
+**Pitfall**: Users can't tell if refresh is working because responses are instant (cached) or slow (fresh).
+
+**Prevention**:
+```javascript
+const refreshData = () => {
+  console.log('DEBUG: Refresh initiated'); // Always add debug logging
+  setCache(new Map()); // Clear cache first
+  setIsLoading(true);  // Show loading state
+  fetchData(params, true); // forceRefresh = true with cache-busting timestamp
+};
+```
+
+---
+
 ## Critical Dependencies & Integration Points
 
 ### **Environment Configuration**
@@ -219,6 +272,7 @@ All: Debounced requests (300ms) prevent API spam
 
 ## Server Management Commands
 
+### **Production Mode (Stable Operation)**
 ```bash
 # Check if server is running
 jobs
@@ -234,9 +288,113 @@ pkill -f "npm run start"
 nohup npm run start > /tmp/analytics-dashboard.log 2>&1 &
 ```
 
+### **Development Mode (For Debugging & Changes)**
+```bash
+# Start in development mode (hot reloading for immediate feedback)
+npm run dev
+
+# Or run in background with logging
+nohup npm run dev > /tmp/analytics-dashboard-dev.log 2>&1 &
+
+# View dev logs
+tail -f /tmp/analytics-dashboard-dev.log
+```
+
+### **🚨 CRITICAL: Multiple Server Detection**
+Running multiple servers simultaneously causes stale code issues. Always check:
+```bash
+# Detect ALL running instances (multiple versions cause conflicts)
+ps aux | grep -E "(npm run start|npm run dev|next-server)"
+
+# Kill ALL instances before starting fresh
+pkill -f "npm run start"
+pkill -f "npm run dev"
+pkill -f "next-server"
+
+# Wait for cleanup, then start fresh
+sleep 3 && npm run dev
+```
+
 ---
 
 ## Troubleshooting: User Symptoms → Code Issues
+
+### **🔥 "My code changes aren't appearing in the UI" (CRITICAL)**
+**This is the #1 debugging mystery. Follow this protocol systematically:**
+
+1. **Verify File Changes Are Applied**:
+   ```javascript
+   // Add a visible test change to confirm UI updates
+   <h1 className="text-2xl font-bold text-red-600">🔴 DEBUG MODE - [Component Name]</h1>
+   ```
+
+2. **Check Multiple Server Detection**:
+   ```bash
+   ps aux | grep -E "(npm run start|npm run dev|next-server)"
+   # Should see only ONE process. If multiple → kill all and restart
+   ```
+
+3. **Clear Build Cache & Restart**:
+   ```bash
+   pkill -f "npm run"
+   rm -rf .next  # Clear Next.js build cache
+   npm run dev   # Use dev mode for hot reloading
+   ```
+
+4. **Browser Cache Issues**:
+   - Hard refresh: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows)
+   - Open private/incognito tab to test
+
+5. **Path Configuration**:
+   - Check all imports use absolute paths: `@/components/...`
+   - Verify `tsconfig.json` paths are absolute: `/Users/.../main-ai-apps/...`
+
+### **"Chart shows wrong dates (timezone issues)"**
+**Date parsing is a common D3.js pitfall. Use these safe patterns:**
+
+```javascript
+// ❌ DANGEROUS: Creates timezone conversion issues
+const date = new Date("2025-08-27");  // Midnight UTC → may shift to previous day locally
+
+// ✅ SAFE: Add time to prevent timezone shift  
+const date = new Date("2025-08-27T12:00:00");  // Noon prevents date shifting
+
+// ✅ SAFE: Use toLocaleDateString for display formatting
+const dateString = new Date(apiDate).toLocaleDateString('en-CA'); // YYYY-MM-DD format
+```
+
+**Chart-Specific Fixes**:
+- **Tooltip dates wrong**: Check mouseover event date parsing
+- **X-axis labels wrong**: Check tickFormat date conversion
+- **Data appears for wrong day**: Check API date formatting vs chart date parsing
+
+### **"Refresh buttons don't work / Cache confusion"**
+**Add debug logging to verify refresh behavior:**
+
+```javascript
+const refreshData = () => {
+  console.log('DEBUG: Refresh clicked - forcing fresh data');
+  setCache(new Map()); // Clear local cache
+  fetchData(selectedRange, true); // forceRefresh = true
+};
+
+const fetchData = async (range, forceRefresh = false) => {
+  console.log(`DEBUG: fetchData called with forceRefresh=${forceRefresh}`);
+  
+  if (!forceRefresh && cached) {
+    console.log('DEBUG: Using cached data');
+    return cached.data;
+  }
+  
+  console.log('DEBUG: Fetching fresh from API');
+  const url = forceRefresh ? `/api/data?range=${range}&_t=${Date.now()}` : `/api/data?range=${range}`;
+  // Add timestamp to bypass browser/proxy cache
+};
+```
+
+**Expected Debug Flow**:
+- Instant refresh → "Using cached data" (cache not cleared)
+- 2-10 second refresh → "Fetching fresh from API" (working correctly)
 
 ### **"Dashboard won't load" (localhost:3003 not accessible)**
 1. Check server process: `ps aux | grep "npm run start"`
@@ -291,12 +449,50 @@ nohup npm run start > /tmp/analytics-dashboard.log 2>&1 &
 3. **Test date range transitions**: Verify smooth UX during rapid clicking
 4. **Monitor database connections**: Watch for pool exhaustion warnings
 5. **Check browser console**: React errors, D3.js warnings, network failures
+6. **🚨 Use consistent date handling**: Always add time (`T12:00:00`) to prevent timezone shifts
+7. **🚨 Use development mode for changes**: `npm run dev` for hot reloading during debugging
+8. **🚨 Add debug logging proactively**: Include `console.log` statements for cache/refresh behavior
 
 ### **Before Making Changes**
 1. **Run existing tests**: `npm run build` (validates TypeScript)
 2. **Test current functionality**: All date ranges, both API endpoints
 3. **Document interface changes**: Update `analytics.ts` if changing API format
 4. **Test performance**: Response times should stay under 400ms
+
+### **🧠 Systematic Debugging Protocol**
+**When something breaks, follow this hypothesis-driven approach:**
+
+1. **Form Multiple Hypotheses**:
+   ```
+   Theory A: Cache not clearing (instant refresh)
+   Theory B: Multiple servers running (stale code)  
+   Theory C: Date parsing timezone issue (wrong dates)
+   Theory D: API endpoint failing (no data)
+   ```
+
+2. **Test Each Hypothesis Systematically**:
+   ```bash
+   # Test A: Check console for debug logs
+   # Test B: ps aux | grep "npm run"
+   # Test C: Check browser network tab for API responses
+   # Test D: curl "localhost:3003/api/analytics/endpoint"
+   ```
+
+3. **Add Visibility to Debug**:
+   ```javascript
+   // Visual change test
+   <div className="bg-red-500">🔴 DEBUG: File change visible</div>
+   
+   // Data flow test  
+   console.log('DEBUG: Component render with data:', data);
+   console.log('DEBUG: API response:', response);
+   ```
+
+4. **Environment Validation**:
+   - Only ONE server process running
+   - Development mode for immediate feedback
+   - Browser hard refresh to clear cache
+   - Console shows expected debug messages
 
 ### **Deployment Checklist**
 1. **Environment variables**: `DATABASE_URL` configured correctly

@@ -58,7 +58,8 @@ export default function DailyOffersChart({
     // Prepare data for stacked layout
     const stackedData = data.map(d => ({
       date: d.date,
-      dateString: new Date(d.date).toISOString().split('T')[0],
+      dateString: new Date(d.date).toLocaleDateString('en-CA'), // YYYY-MM-DD in local timezone
+      originalDate: new Date(d.date), // Keep original for proper formatting
       offerIdeas: d.offerIdeas,
       regularOffers: d.regularOffers,
       total: d.totalOffers
@@ -92,7 +93,9 @@ export default function DailyOffersChart({
     const xAxis = d3.axisBottom(xScale)
       .tickValues(tickValues)
       .tickFormat(d => {
-        const date = new Date(d);
+        // Find the original date object for proper timezone handling
+        const dataPoint = stackedData.find(item => item.dateString === d);
+        const date = dataPoint ? dataPoint.originalDate : new Date(d);
         return d3.timeFormat("%m/%d")(date);
       })
       .tickSizeOuter(0);
