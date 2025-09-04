@@ -1,0 +1,13 @@
+{
+  "campaign_id": "layer1_20250816_150222",
+  "layer_classification": 1,
+  "layer_description": "Platform-wide moments",
+  "send_timestamp": "2025-08-16T15:02:22.275497+00:00",
+  "recipients_analyzed": 1,
+  "campaign_title": "The Nigel 1 Lows are taking off \ud83d\ude80",
+  "campaign_body": "Took an L on the drop this morning? \ud83d\udc40\r\n\r\nTrade for them on the block \u2192",
+  "data_source": "user_notifications table",
+  "extraction_method": "PostgreSQL GROUP BY aggregation",
+  "user_ids_sample": "{27848edf-",
+  "analysis_status": "extracted_from_database"
+}

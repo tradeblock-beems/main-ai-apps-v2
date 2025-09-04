@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "campaign_id": "layer1_nigel1_lows_20250816_150458",
+    "campaign_title": "The Nigel 1 Lows are taking off \ud83d\ude80",
+    "layer_classification": 1,
+    "send_timestamp": "2025-08-16T15:04:58.366044+00:00",
+    "total_recipients": 22648,
+    "analyzed_sample": 100,
+    "analysis_method": "PostHog REST API with distinct_id batching"
+  },
+  "event_analysis": {
+    "$screen": {
+      "baseline_events_total": 4,
+      "baseline_daily_avg": 0.286,
+      "post_push_events_total": 0,
+      "post_push_daily_avg": 0.0,
+      "raw_lift_daily": -0.286,
+      "percent_lift": -100.0,
+      "users_with_baseline": 1,
+      "users_with_post_push": 0,
+      "users_with_both_periods": 0,
+      "mean_user_lift": 0,
+      "stdev_user_lift": 0,
+      "sample_analyzed": 60
+    },
+    "Trade machine clicked": {
+      "baseline_events_total": 1,
+      "baseline_daily_avg": 0.071,
+      "post_push_events_total": 0,
+      "post_push_daily_avg": 0.0,
+      "raw_lift_daily": -0.071,
+      "percent_lift": -100.0,
+      "users_with_baseline": 1,
+      "users_with_post_push": 0,
+      "users_with_both_periods": 0,
+      "mean_user_lift": 0,
+      "stdev_user_lift": 0,
+      "sample_analyzed": 60
+    }
+  }
+}
