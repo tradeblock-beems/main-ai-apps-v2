@@ -22,6 +22,11 @@ const pool: Pool | null = DATABASE_URL ? new Pool({
 
 // Database connection health check
 export async function checkDatabaseConnection(): Promise<boolean> {
+  if (!pool) {
+    console.warn('Database pool not initialized - DATABASE_URL not configured');
+    return false;
+  }
+
   try {
     const client = await pool.connect();
     const result = await client.query('SELECT NOW()');
@@ -38,6 +43,10 @@ export async function executeQuery<T extends QueryResultRow = QueryResultRow>(
   query: string,
   params: unknown[] = []
 ): Promise<QueryResult<T>> {
+  if (!pool) {
+    throw new Error('Database pool not initialized - DATABASE_URL not configured');
+  }
+
   const client: PoolClient = await pool.connect();
   
   try {
@@ -480,6 +489,11 @@ export async function getTotalOfferCount(
 
 // Graceful pool shutdown for application cleanup
 export async function closeDatabasePool(): Promise<void> {
+  if (!pool) {
+    console.warn('Database pool not initialized - nothing to close');
+    return;
+  }
+
   try {
     await pool.end();
     console.log('Database connection pool closed gracefully');
@@ -793,12 +807,16 @@ export async function getConfirmedTransactions(
   const finalStartDate = startDate || defaultStartDate;
   const finalEndDate = endDate || today;
 
+  if (!pool) {
+    throw new Error('Database pool not initialized - DATABASE_URL not configured');
+  }
+
   try {
     const query = `
       WITH daily_confirmed_transactions AS (
-        SELECT 
+        SELECT
           DATE(t.created_at AT TIME ZONE 'America/Chicago') as transaction_date,
-          CASE 
+          CASE
             WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
             WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
               SELECT 1 FROM offer_checkouts oc_other
@@ -821,8 +839,8 @@ export async function getConfirmedTransactions(
             current_timestamp,
             (($2::date + INTERVAL '1 day') AT TIME ZONE 'America/Chicago')
         )
-        GROUP BY DATE(t.created_at AT TIME ZONE 'America/Chicago'), 
-          CASE 
+        GROUP BY DATE(t.created_at AT TIME ZONE 'America/Chicago'),
+          CASE
             WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
             WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
               SELECT 1 FROM offer_checkouts oc_other
@@ -834,7 +852,7 @@ export async function getConfirmedTransactions(
             ELSE 'standard'
           END
       )
-      SELECT 
+      SELECT
         transaction_date,
         SUM(CASE WHEN transaction_type = 'trustedTrader' THEN confirmed_count ELSE 0 END) as trusted_trader_count,
         SUM(CASE WHEN transaction_type = 'trustedPartner' THEN confirmed_count ELSE 0 END) as trusted_partner_count,
@@ -875,12 +893,16 @@ export async function getValidatedTransactions(
   const finalStartDate = startDate || defaultStartDate;
   const finalEndDate = endDate || today;
 
+  if (!pool) {
+    throw new Error('Database pool not initialized - DATABASE_URL not configured');
+  }
+
   try {
     const query = `
       WITH daily_validated_transactions AS (
-        SELECT 
+        SELECT
           DATE(t.validation_passed_date AT TIME ZONE 'America/Chicago') as validation_date,
-          CASE 
+          CASE
             WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
             WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
               SELECT 1 FROM offer_checkouts oc_other
@@ -905,7 +927,7 @@ export async function getValidatedTransactions(
             (($2::date + INTERVAL '1 day') AT TIME ZONE 'America/Chicago')
         )
         GROUP BY DATE(t.validation_passed_date AT TIME ZONE 'America/Chicago'),
-          CASE 
+          CASE
             WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
             WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
               SELECT 1 FROM offer_checkouts oc_other
@@ -917,7 +939,7 @@ export async function getValidatedTransactions(
             ELSE 'standard'
           END
       )
-      SELECT 
+      SELECT
         validation_date,
         SUM(CASE WHEN transaction_type = 'trustedTrader' THEN validated_count ELSE 0 END) as trusted_trader_count,
         SUM(CASE WHEN transaction_type = 'trustedPartner' THEN validated_count ELSE 0 END) as trusted_partner_count,
@@ -948,13 +970,17 @@ export async function getValidatedTransactions(
 // Pool Event Listeners
 // ============================================================================
 
-// Pool event listeners for monitoring
-pool.on('connect', () => {
-  console.log('New database connection established');
-});
+// Pool event listeners for monitoring (only if pool exists)
+if (pool) {
+  pool.on('connect', () => {
+    console.log('New database connection established');
+  });
 
-pool.on('error', (err) => {
-  console.error('Database pool error:', err);
-});
+  pool.on('error', (err) => {
+    console.error('Database pool error:', err);
+  });
+} else {
+  console.warn('⚠️  Database pool event listeners not registered - pool not initialized');
+}
 
 export default pool;
