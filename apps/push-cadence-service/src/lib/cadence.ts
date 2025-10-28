@@ -6,9 +6,20 @@ interface CadenceRule {
     value_count?: number;
 }
 
+/**
+ * Helper function to get database pool with null safety
+ * Throws error if pool is not initialized (DATABASE_URL not configured)
+ */
+function getPool() {
+    if (!pool) {
+        throw new Error('Database pool not initialized. Configure PUSH_CADENCE_DATABASE_URL environment variable.');
+    }
+    return pool;
+}
+
 export const getCadenceRules = async (): Promise<Map<string, CadenceRule>> => {
     const query = 'SELECT name, value_in_hours, value_count FROM cadence_rules WHERE is_active = true';
-    const result = await pool.query(query);
+    const result = await getPool().query(query);
     const rules = new Map<string, CadenceRule>();
     result.rows.forEach(row => {
         rules.set(row.name, {
@@ -72,7 +83,7 @@ export const filterUsersByCadence = async (userIds: string[], layerId: number): 
               AND layer_id = 5
               AND sent_at >= NOW() - INTERVAL '${l5CooldownHours} hours'
         `;
-        const result = await pool.query(query, [validUserIds]);
+        const result = await getPool().query(query, [validUserIds]);
         result.rows.forEach(row => excludedUserIds.add(row.user_id));
         console.log(`[CADENCE] Layer 5 cooldown: excluded ${result.rows.length} users`);
     }
@@ -86,7 +97,7 @@ export const filterUsersByCadence = async (userIds: string[], layerId: number): 
               AND layer_id = 3
               AND sent_at >= NOW() - INTERVAL '${l3CooldownHours} hours'
         `;
-        const result = await pool.query(query, [validUserIds]);
+        const result = await getPool().query(query, [validUserIds]);
         result.rows.forEach(row => excludedUserIds.add(row.user_id));
         console.log(`[CADENCE] Layer 3 cooldown: excluded ${result.rows.length} users`);
     }
@@ -103,7 +114,7 @@ export const filterUsersByCadence = async (userIds: string[], layerId: number): 
             GROUP BY user_id
             HAVING COUNT(*) >= $2
         `;
-        const result = await pool.query(query, [usersToCheckForCombinedLimit, combinedLimitCount]);
+        const result = await getPool().query(query, [usersToCheckForCombinedLimit, combinedLimitCount]);
         result.rows.forEach(row => excludedUserIds.add(row.user_id));
         console.log(`[CADENCE] Combined L2/L3 limit: excluded ${result.rows.length} users`);
     }
@@ -119,17 +130,17 @@ export const filterUsersByCadence = async (userIds: string[], layerId: number): 
 };
 
 export const trackNotification = async (
-    userId: string, 
-    layerId: number, 
-    pushTitle: string, 
-    pushBody: string, 
+    userId: string,
+    layerId: number,
+    pushTitle: string,
+    pushBody: string,
     audienceDescription: string
 ) => {
     const query = `
         INSERT INTO user_notifications (user_id, layer_id, push_title, push_body, audience_description)
         VALUES ($1, $2, $3, $4, $5)
     `;
-    await pool.query(query, [userId, layerId, pushTitle, pushBody, audienceDescription]);
+    await getPool().query(query, [userId, layerId, pushTitle, pushBody, audienceDescription]);
 };
 
 // Historical Data Restoration Functions
@@ -239,7 +250,7 @@ export const validateHistoricalData = async (data: HistoricalNotificationRow[]):
 };
 
 export const bulkInsertHistoricalNotifications = async (data: HistoricalNotificationRow[]): Promise<InsertResult> => {
-    const client = await pool.connect();
+    const client = await getPool().connect();
     let insertedCount = 0;
     let duplicatesSkipped = 0;
     const errors: string[] = [];
@@ -380,7 +391,7 @@ export const updateExistingRecordsWithDeepLinks = async (trackResultsLogs: Track
     matchedLogs: number;
     errors: string[];
 }> => {
-    const client = await pool.connect();
+    const client = await getPool().connect();
     let updatedCount = 0;
     let matchedLogs = 0;
     const errors: string[] = [];
