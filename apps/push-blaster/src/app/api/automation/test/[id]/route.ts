@@ -12,6 +12,62 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+// Type definitions for automation and related structures
+interface PushSequenceItem {
+  title: string;
+  body: string;
+  layerId: number;
+  deepLink?: string;
+  audienceName?: string;
+}
+
+interface CustomScript {
+  scriptId: string;
+  parameters?: Record<string, unknown>;
+}
+
+interface AudienceCriteria {
+  customScript?: CustomScript;
+}
+
+interface Automation {
+  id: string;
+  name: string;
+  pushSequence: PushSequenceItem[];
+  audienceCriteria?: AudienceCriteria;
+}
+
+interface AudienceInfo {
+  name: string;
+  fileName: string;
+  userCount: number;
+  type: string;
+  csvPath?: string;
+}
+
+interface ScriptResult {
+  success: boolean;
+  message?: string;
+  csvFiles?: string[];
+}
+
+interface ExecutionResult {
+  success: boolean;
+  message: string;
+}
+
+interface FileStats {
+  name: string;
+  mtime: Date;
+}
+
+interface CsvRow {
+  user_id: string;
+  [key: string]: string;
+}
+
+type SendLogFunction = (level: 'info' | 'success' | 'warning' | 'error', message: string, stage?: string) => void;
+
 // GET - Start test execution with Server-Sent Events for real-time logging
 export async function GET(req: NextRequest, { params }: RouteParams) {
   console.log('🚨🚨🚨 [IMMEDIATE-TEST-API] GET aPI/automation/test/[id] HAS BEEN CALLED! THIS MAY BE THE SOURCE OF THE BUG. 🚨🚨🚨');
@@ -83,12 +139,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error starting test execution:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json({
       success: false,
       message: 'Failed to start test execution',
-      errors: [error.message]
+      errors: [errorMessage]
     }, { status: 500 });
   }
 }
@@ -174,9 +231,10 @@ async function executeTest(
             sendLog('error', `❌ Push ${i + 1} dry run failed: ${result.message}`, 'EXECUTION');
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         failureCount++;
-        sendLog('error', `❌ Push ${i + 1} error: ${error.message}`, 'EXECUTION');
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        sendLog('error', `❌ Push ${i + 1} error: ${errorMessage}`, 'EXECUTION');
       }
 
       // Add delay between pushes (simulate real execution timing)
@@ -196,9 +254,10 @@ async function executeTest(
       sendResult(false, `All ${totalPushes} pushes failed ❌`);
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Test execution error:', error);
-    sendError(`Test execution failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    sendError(`Test execution failed: ${errorMessage}`);
   } finally {
     // Always unregister the test when it completes or fails
     unregisterRunningTest(automationId, mode);
@@ -217,11 +276,16 @@ async function loadAutomation(automationId: string) {
 }
 
 // Helper function to execute script
-async function executeScript(scriptConfig: any, sendLog: Function, automationId?: string, mode?: string) {
+async function executeScript(scriptConfig: CustomScript, sendLog: SendLogFunction, automationId?: string, mode?: string): Promise<ScriptResult> {
   const fs = require('fs');
+  const path = require('path');
+
   const debugLog = (message: string) => {
     const timestamp = new Date().toISOString();
-    fs.appendFileSync('/Users/AstroLab/Desktop/debug.log', `${timestamp}: ${message}\n`);
+    const debugPath = path.join(process.cwd(), 'tmp', 'debug.log');
+    // Ensure tmp directory exists
+    fs.mkdirSync(path.dirname(debugPath), { recursive: true });
+    fs.appendFileSync(debugPath, `${timestamp}: ${message}\n`);
   };
   
   debugLog('[API] executeScript called with: ' + JSON.stringify(scriptConfig));
@@ -267,24 +331,26 @@ async function executeScript(scriptConfig: any, sendLog: Function, automationId?
         message: `${result.error}${result.stderr ? ' | stderr: ' + result.stderr : ''}`
       };
     }
-  } catch (error: any) {
-    sendLog('error', `Script execution exception: ${error.message}`, 'SCRIPT');
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    sendLog('error', `Script execution exception: ${errorMessage}`, 'SCRIPT');
     return {
       success: false,
-      message: error.message
+      message: errorMessage
     };
   }
 }
 
 // Helper function to filter audiences based on test mode
-async function filterAudiences(automation: any, audienceType: 'TEST' | 'REAL', sendLog: Function) {
+async function filterAudiences(automation: Automation, audienceType: 'TEST' | 'REAL', sendLog: SendLogFunction): Promise<AudienceInfo[]> {
   const fs = require('fs');
   const path = require('path');
   const Papa = require('papaparse');
-  
-  const audiences: any[] = [];
-  // Absolute path to where Python scripts actually create CSV files
-  const generatedCsvsDir = '/Users/AstroLab/Desktop/code-projects/main-ai-apps/apps/generated_csvs';
+
+  const audiences: AudienceInfo[] = [];
+  // Railway-compatible relative path using process.cwd()
+  const projectRoot = process.cwd();
+  const generatedCsvsDir = path.join(projectRoot, '..', '..', 'generated_csvs');
   
   // Check if generated_csvs directory exists
   if (!fs.existsSync(generatedCsvsDir)) {
@@ -299,8 +365,8 @@ async function filterAudiences(automation: any, audienceType: 'TEST' | 'REAL', s
       name: file,
       mtime: fs.statSync(path.join(generatedCsvsDir, file)).mtime
     }))
-    .sort((a: any, b: any) => b.mtime.getTime() - a.mtime.getTime())
-    .map((file: any) => file.name);
+    .sort((a: FileStats, b: FileStats) => b.mtime.getTime() - a.mtime.getTime())
+    .map((file: FileStats) => file.name);
   
     // Detect automation type and create appropriate file mapping
   const isWaterfallScript = automation.audienceCriteria?.customScript?.scriptId === 'generate_new_user_waterfall';
@@ -372,10 +438,11 @@ async function filterAudiences(automation: any, audienceType: 'TEST' | 'REAL', s
         const csvContent = fs.readFileSync(csvPath, 'utf8');
         const parseResult = Papa.parse(csvContent, { header: true, skipEmptyLines: true });
         userCount = parseResult.data.length;
-        
+
         sendLog('success', `Found ${audienceCategory} audience: ${userCount} users`, 'FILTER');
-      } catch (error: any) {
-        sendLog('error', `Failed to load CSV ${csvFile}: ${error.message}`, 'FILTER');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        sendLog('error', `Failed to load CSV ${csvFile}: ${errorMessage}`, 'FILTER');
         userCount = 0;
       }
     } else {
@@ -396,8 +463,8 @@ async function filterAudiences(automation: any, audienceType: 'TEST' | 'REAL', s
   return audiences;
 }
 
-// Helper function to execute dry run using REAL validation infrastructure  
-async function executeDryRun(push: any, audience: any, sendLog: Function) {
+// Helper function to execute dry run using REAL validation infrastructure
+async function executeDryRun(push: PushSequenceItem, audience: AudienceInfo, sendLog: SendLogFunction): Promise<ExecutionResult> {
   try {
     sendLog('info', 'Validating push configuration...', 'DRY_RUN');
     
@@ -434,12 +501,12 @@ async function executeDryRun(push: any, audience: any, sendLog: Function) {
     
     const csvContent = fs.readFileSync(audience.csvPath, 'utf8');
     const parseResult = Papa.parse(csvContent, { header: true, skipEmptyLines: true });
-    
+
     if (parseResult.errors.length > 0) {
-      throw new Error(`CSV parsing errors: ${parseResult.errors.map((e: any) => e.message).join(', ')}`);
+      throw new Error(`CSV parsing errors: ${parseResult.errors.map((e: {message: string}) => e.message).join(', ')}`);
     }
-    
-    let userIds = parseResult.data.map((row: any) => row.user_id).filter(Boolean);
+
+    let userIds = (parseResult.data as CsvRow[]).map((row: CsvRow) => row.user_id).filter(Boolean);
     if (userIds.length === 0) {
       throw new Error('No valid user IDs found in CSV file');
     }
@@ -471,8 +538,9 @@ async function executeDryRun(push: any, audience: any, sendLog: Function) {
           
           sendLog('success', `Cadence filtering: ${excludedCount} users would be excluded, ${userIds.length} users eligible`, 'DRY_RUN');
         }
-      } catch (error: any) {
-        sendLog('warning', `Cadence service error: ${error.message}, dry run proceeding`, 'DRY_RUN');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        sendLog('warning', `Cadence service error: ${errorMessage}, dry run proceeding`, 'DRY_RUN');
       }
     } else {
       const reason = audience.type === 'TEST' ? 'Test audience (Layer 4)' : `Layer ${effectiveLayerId}`;
@@ -480,11 +548,11 @@ async function executeDryRun(push: any, audience: any, sendLog: Function) {
     }
     
     if (userIds.length === 0) {
-      throw new Error(`All ${parseResult.data.length} users would be excluded by cadence rules. No users eligible for push.`);
+      throw new Error(`All ${(parseResult.data as CsvRow[]).length} users would be excluded by cadence rules. No users eligible for push.`);
     }
     
     // Step 3: Validate variable usage (same as main push)
-    const variableValidation = validateVariables(push.title, push.body, push.deepLink || undefined, parseResult.data);
+    const variableValidation = validateVariables(push.title, push.body, push.deepLink || undefined, parseResult.data as CsvRow[]);
     if (!variableValidation.isValid) {
       const errorDetails = [
         ...variableValidation.errors,
@@ -529,10 +597,10 @@ async function executeDryRun(push: any, audience: any, sendLog: Function) {
     // Step 5: Process variable replacements (REAL processing)
     sendLog('info', 'Processing personalized message variations...', 'DRY_RUN');
     const variableReplacements = processVariableReplacements(
-      push.title, 
-      push.body, 
-      push.deepLink, 
-      parseResult.data
+      push.title,
+      push.body,
+      push.deepLink,
+      parseResult.data as CsvRow[]
     );
     
     sendLog('success', `Processed ${variableReplacements.length} personalized messages`, 'DRY_RUN');
@@ -598,17 +666,18 @@ async function executeDryRun(push: any, audience: any, sendLog: Function) {
       success: true,
       message: `Dry run completed: would send ${totalTokensToSend} notifications to ${usersWithTokens} users`
     };
-  } catch (error: any) {
-    sendLog('error', `Dry run failed: ${error.message}`, 'DRY_RUN');
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    sendLog('error', `Dry run failed: ${errorMessage}`, 'DRY_RUN');
     return {
       success: false,
-      message: error.message
+      message: errorMessage
     };
   }
 }
 
 // Helper function to execute live send using REAL push infrastructure
-async function executeLiveSend(push: any, audience: any, sendLog: Function) {
+async function executeLiveSend(push: PushSequenceItem, audience: AudienceInfo, sendLog: SendLogFunction): Promise<ExecutionResult> {
   try {
     sendLog('info', 'Preparing live push notification...', 'LIVE_SEND');
     
@@ -627,7 +696,7 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
     
     const csvContent = fs.readFileSync(audience.csvPath, 'utf8');
     const parseResult = Papa.parse(csvContent, { header: true, skipEmptyLines: true });
-    let userIds = parseResult.data.map((row: any) => row.user_id).filter(Boolean);
+    let userIds = (parseResult.data as CsvRow[]).map((row: CsvRow) => row.user_id).filter(Boolean);
     
     sendLog('info', `Loaded ${userIds.length} users from CSV file`, 'LIVE_SEND');
     
@@ -664,8 +733,9 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
             console.log(`[AUTOMATION] Layer ${effectiveLayerId} cadence filtering: All users eligible`);
           }
         }
-      } catch (error: any) {
-        sendLog('warning', `⚠️ Cadence service error: ${error.message}. Failing open - proceeding with all users`, 'LIVE_SEND');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        sendLog('warning', `⚠️ Cadence service error: ${errorMessage}. Failing open - proceeding with all users`, 'LIVE_SEND');
         console.error(`[AUTOMATION] Cadence service fetch error:`, error);
       }
     } else {
@@ -674,7 +744,7 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
     }
     
     if (userIds.length === 0) {
-      throw new Error(`All ${parseResult.data.length} users were excluded by cadence rules. No users eligible for push.`);
+      throw new Error(`All ${(parseResult.data as CsvRow[]).length} users were excluded by cadence rules. No users eligible for push.`);
     }
     
     sendLog('info', `Loading device tokens for ${userIds.length} eligible users...`, 'LIVE_SEND');
@@ -689,10 +759,10 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
     
     // Step 3: Process variable replacements using real CSV data
     const variableReplacements = processVariableReplacements(
-      push.title, 
-      push.body, 
-      push.deepLink, 
-      parseResult.data
+      push.title,
+      push.body,
+      push.deepLink,
+      parseResult.data as CsvRow[]
     );
     
     sendLog('info', `Processed ${variableReplacements.length} personalized messages`, 'LIVE_SEND');
@@ -767,10 +837,11 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
           const response = await pushClient.sendEachForMulticast(message);
           totalSent += response.successCount;
           totalFailed += response.failureCount;
-          
+
           sendLog('success', `Batch ${batchNumber}: ${response.successCount} sent, ${response.failureCount} failed`, 'LIVE_SEND');
-        } catch (error: any) {
-          sendLog('error', `Batch ${batchNumber} failed: ${error.message}`, 'LIVE_SEND');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          sendLog('error', `Batch ${batchNumber} failed: ${errorMessage}`, 'LIVE_SEND');
           totalFailed += batchTokens.length;
         }
       }
@@ -784,9 +855,9 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
       try {
         // Get the successful user IDs for tracking (same logic as main push)
         // Map successful tokens back to user IDs from the CSV data
-        const successfulUserIds = parseResult.data
-          .filter((row: any) => userToTokensMap.get(row.user_id)?.some(token => uniqueTokensAdded.has(token)))
-          .map((row: any) => row.user_id);
+        const successfulUserIds = (parseResult.data as CsvRow[])
+          .filter((row: CsvRow) => userToTokensMap.get(row.user_id)?.some(token => uniqueTokensAdded.has(token)))
+          .map((row: CsvRow) => row.user_id);
         
         let trackingCount = 0;
         // CRITICAL FIX: Only track users who actually received Firebase notifications
@@ -807,7 +878,7 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
         }
         
         // Map delivered tokens back to user IDs
-        for (const row of parseResult.data) {
+        for (const row of (parseResult.data as CsvRow[])) {
           const userTokens = userToTokensMap.get(row.user_id);
           if (userTokens && userTokens.some(token => deliveredTokens.has(token))) {
             actuallyDeliveredUserIds.push(row.user_id);
@@ -834,14 +905,15 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
             } else {
               console.error(`Failed to track notification for user ${userId}: ${response.status}`);
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error(`Failed to track notification for user ${userId}:`, error);
           }
         }
-        
+
         sendLog('success', `Recorded ${trackingCount}/${successfulUserIds.length} notifications in cadence database`, 'LIVE_SEND');
-      } catch (error: any) {
-        sendLog('warning', `Cadence tracking failed: ${error.message}`, 'LIVE_SEND');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        sendLog('warning', `Cadence tracking failed: ${errorMessage}`, 'LIVE_SEND');
       }
     }
     
@@ -852,11 +924,12 @@ async function executeLiveSend(push: any, audience: any, sendLog: Function) {
       success: totalSent > 0,
       message: `Push sent to ${totalSent} users (${totalFailed} failed)`
     };
-  } catch (error: any) {
-    sendLog('error', `Push failed: ${error.message}`, 'LIVE_SEND');
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    sendLog('error', `Push failed: ${errorMessage}`, 'LIVE_SEND');
     return {
       success: false,
-      message: error.message
+      message: errorMessage
     };
   }
 }

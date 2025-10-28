@@ -10,7 +10,7 @@ export interface ScriptConfig {
   scriptPath: string;
   scriptName: string;
   description: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   outputFormat: 'csv' | 'json';
   estimatedRuntime: number; // seconds
 }
@@ -83,15 +83,17 @@ export class ScriptExecutor {
   private outputDirectory: string;
 
   constructor() {
-    // Absolute paths for maximum reliability - no directory confusion
-    this.scriptsDirectory = '/Users/AstroLab/Desktop/code-projects/main-ai-apps/projects/push-automation/audience-generation-scripts';
-    this.outputDirectory = '/Users/AstroLab/Desktop/code-projects/main-ai-apps/apps/push-blaster/.script-outputs';
-    
+    // Railway-compatible relative paths using process.cwd()
+    const projectRoot = process.cwd();
+    // Navigate up from apps/push-blaster to main-ai-apps, then to projects
+    this.scriptsDirectory = path.join(projectRoot, '..', '..', 'projects', 'push-automation', 'audience-generation-scripts');
+    this.outputDirectory = path.join(projectRoot, '.script-outputs');
+
     // Ensure output directory exists
     if (!fs.existsSync(this.outputDirectory)) {
       fs.mkdirSync(this.outputDirectory, { recursive: true });
     }
-    
+
     this.log('Script Executor initialized');
   }
 
@@ -135,7 +137,7 @@ export class ScriptExecutor {
       this.log(`Discovered ${scripts.length} available scripts`);
       return scripts;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError('Failed to discover scripts', error);
       return [];
     }
@@ -145,8 +147,8 @@ export class ScriptExecutor {
    * Execute a Python script for audience generation
    */
   async executeScript(
-    scriptId: string, 
-    parameters: Record<string, any> = {},
+    scriptId: string,
+    parameters: Record<string, unknown> = {},
     executionId: string,
     isDryRun: boolean = false
   ): Promise<ScriptExecutionResult> {
@@ -281,15 +283,16 @@ export class ScriptExecutor {
         stderr: result.stderr
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       const executionTime = Date.now() - startTime;
-      
+
       this.logError(`Script execution failed for ${scriptId}`, error);
-      
+
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       return {
         success: false,
         executionTime,
-        error: error.message
+        error: errorMessage
       };
     }
   }
@@ -377,14 +380,14 @@ export class ScriptExecutor {
     return fileName.replace('.py', '').toLowerCase().replace(/[^a-z0-9]/g, '_');
   }
 
-  private formatScriptParameters(parameters: Record<string, any>): Record<string, string> {
+  private formatScriptParameters(parameters: Record<string, unknown>): Record<string, string> {
     const formatted: Record<string, string> = {};
-    
+
     for (const [key, value] of Object.entries(parameters)) {
       const envKey = `PARAM_${key.toUpperCase()}`;
       formatted[envKey] = String(value);
     }
-    
+
     return formatted;
   }
 
@@ -404,7 +407,7 @@ export class ScriptExecutor {
     console.log(`${this.logPrefix} ${message}`);
   }
 
-  private logError(message: string, error: any): void {
+  private logError(message: string, error: unknown): void {
     console.error(`${this.logPrefix} ${message}:`, error);
   }
 }

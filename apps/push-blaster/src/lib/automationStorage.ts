@@ -311,7 +311,7 @@ export class AutomationStorage {
    */
   async loadScheduledPushes(): Promise<ScheduledPushData[]> {
     try {
-      const scheduledPushesDir = '/Users/AstroLab/Desktop/code-projects/main-ai-apps/apps/push-blaster/.scheduled-pushes';
+      const scheduledPushesDir = path.join(process.cwd(), '.scheduled-pushes');
 
       if (!fs.existsSync(scheduledPushesDir)) {
         this.log('No scheduled pushes directory found');
@@ -395,7 +395,7 @@ export class AutomationStorage {
   async createBackup(): Promise<{ success: boolean; backupPath?: string; message: string }> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const backupPath = `/Users/AstroLab/Desktop/code-projects/main-ai-apps/apps/push-blaster/automation-backup-${timestamp}.json`;
+      const backupPath = path.join(process.cwd(), `automation-backup-${timestamp}.json`);
       
       const allAutomations = await this.loadAllAutomations();
       
