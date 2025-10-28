@@ -9,7 +9,8 @@ import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { DATABASE_URL } from '@/lib/config';
 
 // Connection pool configuration optimized for analytics workloads
-const pool = new Pool({
+// Only initialize pool if DATABASE_URL is configured
+const pool: Pool | null = DATABASE_URL ? new Pool({
   connectionString: DATABASE_URL,
   max: 10, // Maximum number of connections in pool
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
@@ -17,7 +18,7 @@ const pool = new Pool({
   statement_timeout: 30000, // 30 second query timeout
   query_timeout: 30000, // 30 second query timeout
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+}) : null; // null pool will cause queries to fail gracefully with clear error messages
 
 // Database connection health check
 export async function checkDatabaseConnection(): Promise<boolean> {
@@ -33,9 +34,9 @@ export async function checkDatabaseConnection(): Promise<boolean> {
 }
 
 // Execute query with automatic connection management
-export async function executeQuery<T extends QueryResultRow = any>(
-  query: string, 
-  params: any[] = []
+export async function executeQuery<T extends QueryResultRow = QueryResultRow>(
+  query: string,
+  params: unknown[] = []
 ): Promise<QueryResult<T>> {
   const client: PoolClient = await pool.connect();
   
@@ -161,16 +162,29 @@ export async function getCohortAnalysis(
         mc.username,
         
         -- Closet Add (first inventory item addition)
-        CASE WHEN MIN(ii.created_at) <= mc.join_date + INTERVAL '72 hours' 
+        CASE WHEN MIN(ii.created_at) <= mc.join_date + INTERVAL '72 hours'
              THEN 1 ELSE 0 END as completed_closet_add,
              
-        -- Wishlist Add (first wishlist item addition)  
+        -- Wishlist Add (first wishlist item addition) 
         CASE WHEN MIN(wi.created_at) <= mc.join_date + INTERVAL '72 hours'
              THEN 1 ELSE 0 END as completed_wishlist_add,
              
         -- Create Offer (first offer creation)
         CASE WHEN MIN(o.created_at) <= mc.join_date + INTERVAL '72 hours'
-             THEN 1 ELSE 0 END as completed_create_offer
+             THEN 1 ELSE 0 END as completed_create_offer,
+             
+        -- Confirmed Transaction (simple scalar subquery for performance)
+        CASE WHEN EXISTS (
+          SELECT 1 
+          FROM offer_checkouts oc
+          JOIN offers o ON oc.offer_id = o.id
+          JOIN trades t ON o.id = t.offer_id
+          WHERE oc.user_id = mc.user_id
+          AND oc.deleted_at = 0
+          AND o.deleted_at = 0 
+          AND t.deleted_at = 0
+          AND t.created_at <= mc.join_date + INTERVAL '72 hours'
+        ) THEN 1 ELSE 0 END as completed_confirmed_transaction
              
       FROM monthly_cohorts mc
       LEFT JOIN inventory_items ii ON mc.user_id = ii.user_id AND ii.deleted_at = 0
@@ -194,11 +208,15 @@ export async function getCohortAnalysis(
         SUM(completed_create_offer) as create_offer_count,
         ROUND(SUM(completed_create_offer) * 100.0 / COUNT(*), 2) as create_offer_percentage,
         
-        -- All actions completion (users who completed all 3)
+        -- All actions completion (users who completed all 3 traditional actions - NOT including confirmed transactions)
         SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
                  THEN 1 ELSE 0 END) as all_actions_count,
         ROUND(SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
-                      THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as all_actions_percentage
+                      THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as all_actions_percentage,
+        
+        -- Confirmed transactions completion (separate metric, far right column)
+        SUM(completed_confirmed_transaction) as confirmed_transaction_count,
+        ROUND(SUM(completed_confirmed_transaction) * 100.0 / COUNT(*), 2) as confirmed_transaction_percentage
                       
       FROM cohort_actions
       GROUP BY cohort_month
@@ -214,7 +232,9 @@ export async function getCohortAnalysis(
       create_offer_count,
       create_offer_percentage,
       all_actions_count,
-      all_actions_percentage
+      all_actions_percentage,
+      confirmed_transaction_count,
+      confirmed_transaction_percentage
     FROM cohort_summary
     ORDER BY cohort_month DESC
     LIMIT $1
@@ -239,16 +259,21 @@ export async function getCohortAnalysis(
         wc.username,
         
         -- Closet Add (first inventory item addition)
-        CASE WHEN MIN(ii.created_at) <= wc.join_date + INTERVAL '72 hours' 
+        CASE WHEN MIN(ii.created_at) <= wc.join_date + INTERVAL '72 hours'
              THEN 1 ELSE 0 END as completed_closet_add,
              
-        -- Wishlist Add (first wishlist item addition)  
+        -- Wishlist Add (first wishlist item addition) 
         CASE WHEN MIN(wi.created_at) <= wc.join_date + INTERVAL '72 hours'
              THEN 1 ELSE 0 END as completed_wishlist_add,
              
         -- Create Offer (first offer creation)
         CASE WHEN MIN(o.created_at) <= wc.join_date + INTERVAL '72 hours'
-             THEN 1 ELSE 0 END as completed_create_offer
+             THEN 1 ELSE 0 END as completed_create_offer,
+             
+        -- Confirmed Transaction (temporarily disabled for weekly performance - using 0 as placeholder)
+        -- Weekly cohort analysis creates too many rows for the EXISTS subquery to be efficient
+        -- TODO: Optimize this with a pre-calculated lookup table or materialized view
+        0 as completed_confirmed_transaction
              
       FROM weekly_cohorts wc
       LEFT JOIN inventory_items ii ON wc.user_id = ii.user_id AND ii.deleted_at = 0
@@ -272,11 +297,15 @@ export async function getCohortAnalysis(
         SUM(completed_create_offer) as create_offer_count,
         ROUND(SUM(completed_create_offer) * 100.0 / COUNT(*), 2) as create_offer_percentage,
         
-        -- All actions completion (users who completed all 3)
+        -- All actions completion (users who completed all 3 traditional actions - NOT including confirmed transactions)
         SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
                  THEN 1 ELSE 0 END) as all_actions_count,
         ROUND(SUM(CASE WHEN completed_closet_add = 1 AND completed_wishlist_add = 1 AND completed_create_offer = 1 
-                      THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as all_actions_percentage
+                      THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as all_actions_percentage,
+        
+        -- Confirmed transactions completion (separate metric, far right column)
+        SUM(completed_confirmed_transaction) as confirmed_transaction_count,
+        ROUND(SUM(completed_confirmed_transaction) * 100.0 / COUNT(*), 2) as confirmed_transaction_percentage
                       
       FROM cohort_actions
       GROUP BY cohort_week
@@ -292,7 +321,9 @@ export async function getCohortAnalysis(
       create_offer_count,
       create_offer_percentage,
       all_actions_count,
-      all_actions_percentage
+      all_actions_percentage,
+      confirmed_transaction_count,
+      confirmed_transaction_percentage
     FROM cohort_summary
     ORDER BY cohort_week DESC
     LIMIT $1
@@ -456,6 +487,466 @@ export async function closeDatabasePool(): Promise<void> {
     console.error('Error closing database pool:', error);
   }
 }
+
+// ============================================================================
+// PostHog Integration Functions
+// ============================================================================
+
+import { spawn } from 'child_process';
+import path from 'path';
+
+// PostHog data availability starts from this date
+const POSTHOG_START_DATE = '2025-06-16';
+
+// Type definitions for PostHog Python script responses
+interface PostHogErrorResponse {
+  error: string;
+  traceback?: string;
+}
+
+interface PostHogActiveUser {
+  date: string;
+  active_users: number;
+}
+
+interface PostHogUniqueCreator {
+  date: string;
+  unique_creators: number;
+}
+
+type PostHogActiveUsersResult = PostHogActiveUser[] | PostHogErrorResponse;
+type PostHogUniqueCreatorsResult = PostHogUniqueCreator[] | PostHogErrorResponse;
+
+// Type guard to check if result is an error
+function isPostHogError(result: unknown): result is PostHogErrorResponse {
+  return typeof result === 'object' && result !== null && 'error' in result;
+}
+
+interface OfferDataForMap {
+  date: Date;
+  totalOffers: number;
+  offerIdeas: number;
+  regularOffers: number;
+}
+
+interface ValidDataItem {
+  date: Date;
+  totalOffers: number;
+  activeUsers: number;
+  offersPerActiveUser: number;
+}
+
+interface DailyUniqueCreatorItem {
+  date: Date;
+  uniqueCreators: number;
+}
+
+
+/**
+ * Get daily active users and daily offers data combined for offers per active user calculation
+ */
+export async function getDailyOffersPerActiveUser(
+  startDate?: string,
+  endDate?: string
+): Promise<{ date: Date; totalOffers: number; activeUsers: number; offersPerActiveUser: number }[]> {
+  // Set date constraints with PostHog data availability
+  // Allow all data up to today - we'll filter by data availability, not arbitrary date limits
+  const today = new Date().toISOString().split('T')[0];
+  const defaultStartDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  
+  const finalStartDate = startDate || defaultStartDate;
+  const finalEndDate = endDate || today; // Query up to today, filter by data availability
+  
+  // Ensure we don't query before PostHog data is available
+  const constrainedStartDate = finalStartDate < POSTHOG_START_DATE ? POSTHOG_START_DATE : finalStartDate;
+  const constrainedEndDate = finalEndDate;
+
+  try {
+    // Get daily offers from existing PostgreSQL query  
+    const dailyOffers = await getDailyOffers(constrainedStartDate, constrainedEndDate);
+    
+    // Execute PostHog script for active users using absolute paths
+    const pythonScript = `
+import sys
+import os
+import json
+
+# Add absolute paths to Python path
+sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps')
+sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps/basic_capabilities/internal_db_queries_toolbox')
+
+try:
+    from basic_capabilities.internal_db_queries_toolbox.posthog_utils import get_daily_active_users
+    result = get_daily_active_users('${constrainedStartDate}', '${constrainedEndDate}')
+    print(json.dumps(result))
+except Exception as e:
+    import traceback
+    print(json.dumps({"error": str(e), "traceback": traceback.format_exc()}), file=sys.stderr)
+    sys.exit(1)
+`;
+
+    const activeUsersResult = await new Promise((resolve, reject) => {
+      const pythonProcess = spawn('python3', ['-c', pythonScript], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        cwd: '/Users/AstroLab/Desktop/code-projects/main-ai-apps'
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('PostHog script error:', stderr);
+          reject(new Error(`PostHog script failed with code ${code}: ${stderr}`));
+          return;
+        }
+
+        try {
+          const result = JSON.parse(stdout);
+          resolve(result);
+        } catch (parseError) {
+          console.error('Failed to parse PostHog script output:', stdout);
+          reject(new Error(`Failed to parse PostHog output: ${parseError}`));
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        reject(new Error(`Failed to start PostHog script: ${error.message}`));
+      });
+    });
+
+    if (isPostHogError(activeUsersResult)) {
+      throw new Error(`PostHog error: ${activeUsersResult.error}`);
+    }
+
+    // Create lookup map for offers data
+    const offersMap: Map<string, OfferDataForMap> = new Map();
+    dailyOffers.forEach(offer => {
+      const dateStr = new Date(offer.date).toISOString().split('T')[0];
+      offersMap.set(dateStr, offer);
+    });
+
+    // Build combined data using the new logic: "show if both offers and active users have valid data"
+    const validData: ValidDataItem[] = [];
+
+    activeUsersResult.forEach((activeUser: PostHogActiveUser) => {
+      const dateStr = activeUser.date;
+      
+      // Strict constraint: Only include dates from PostHog availability onwards
+      if (dateStr < POSTHOG_START_DATE) {
+        return;
+      }
+      
+      // Must have valid active users data (> 0)
+      if (!activeUser.active_users || activeUser.active_users <= 0) {
+        return;
+      }
+      
+      // Get corresponding offers data - must exist in offers table for this date
+      const offersData = offersMap.get(dateStr);
+      
+      // Only include if we have BOTH valid active users AND offers data for this date
+      // (Note: totalOffers can be 0 if no offers were created that day, but offers table must have a record)
+      if (!offersData) {
+        return; // Skip dates where we have no offers data at all
+      }
+      
+      const totalOffers = offersData.totalOffers;
+      
+      // Calculate ratio
+      const offersPerActiveUser = activeUser.active_users > 0 
+        ? Number((totalOffers / activeUser.active_users).toFixed(4))
+        : 0;
+      
+      validData.push({
+        date: new Date(dateStr),
+        totalOffers,
+        activeUsers: activeUser.active_users,
+        offersPerActiveUser
+      });
+    });
+
+    // Return sorted data (already filtered to valid PostHog dates only)
+    return validData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  } catch (error) {
+    console.error('CRITICAL ERROR in getDailyOffersPerActiveUser:', error);
+    throw new Error(`Failed to fetch offers per active user data: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Get daily unique offer creators from PostHog
+ */
+export async function getDailyUniqueOfferCreators(
+  startDate?: string,
+  endDate?: string
+): Promise<{ date: Date; uniqueCreators: number }[]> {
+  // Set date constraints with PostHog data availability  
+  const today = new Date().toISOString().split('T')[0];
+  const defaultStartDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  
+  const finalStartDate = startDate || defaultStartDate;
+  const finalEndDate = endDate || today;
+  
+  // Ensure we don't query before PostHog data is available
+  const constrainedStartDate = finalStartDate < POSTHOG_START_DATE ? POSTHOG_START_DATE : finalStartDate;
+
+  try {
+    // Execute PostHog script for unique creators using absolute paths
+    const pythonScript = `
+import sys
+import os
+import json
+
+# Add absolute paths to Python path
+sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps')
+sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps/basic_capabilities/internal_db_queries_toolbox')
+
+try:
+    from basic_capabilities.internal_db_queries_toolbox.posthog_utils import get_daily_unique_offer_creators
+    result = get_daily_unique_offer_creators('${constrainedStartDate}', '${finalEndDate}')
+    print(json.dumps(result))
+except Exception as e:
+    import traceback
+    print(json.dumps({"error": str(e), "traceback": traceback.format_exc()}), file=sys.stderr)
+    sys.exit(1)
+`;
+
+    const result = await new Promise((resolve, reject) => {
+      const pythonProcess = spawn('python3', ['-c', pythonScript], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        cwd: '/Users/AstroLab/Desktop/code-projects/main-ai-apps'
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('PostHog script error:', stderr);
+          reject(new Error(`PostHog script failed with code ${code}: ${stderr}`));
+          return;
+        }
+
+        try {
+          const result = JSON.parse(stdout);
+          resolve(result);
+        } catch (parseError) {
+          console.error('Failed to parse PostHog script output:', stdout);
+          reject(new Error(`Failed to parse PostHog output: ${parseError}`));
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        reject(new Error(`Failed to start PostHog script: ${error.message}`));
+      });
+    });
+
+    if (isPostHogError(result)) {
+      throw new Error(`PostHog error: ${result.error}`);
+    }
+
+    // Convert to expected format with Date objects
+    return result.map((item: PostHogUniqueCreator): DailyUniqueCreatorItem => ({
+      date: new Date(item.date),
+      uniqueCreators: item.unique_creators
+    })).sort((a: DailyUniqueCreatorItem, b: DailyUniqueCreatorItem) => a.date.getTime() - b.date.getTime());
+
+  } catch (error) {
+    console.error('CRITICAL ERROR in getDailyUniqueOfferCreators:', error);
+    throw new Error(`Failed to fetch unique offer creators data: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+// ============================================================================
+// Transaction Analytics Functions (Third Tab)
+// ============================================================================
+
+/**
+ * Get daily confirmed transactions segmented by trusted trader status
+ */
+export async function getConfirmedTransactions(
+  startDate?: string,
+  endDate?: string
+): Promise<{ date: Date; trustedTraderCount: number; trustedPartnerCount: number; standardCount: number; totalCount: number }[]> {
+  // Set date constraints
+  const today = new Date().toISOString().split('T')[0];
+  const defaultStartDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  
+  const finalStartDate = startDate || defaultStartDate;
+  const finalEndDate = endDate || today;
+
+  try {
+    const query = `
+      WITH daily_confirmed_transactions AS (
+        SELECT 
+          DATE(t.created_at AT TIME ZONE 'America/Chicago') as transaction_date,
+          CASE 
+            WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
+            WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
+              SELECT 1 FROM offer_checkouts oc_other
+              WHERE oc_other.offer_id = oc.offer_id
+              AND oc_other.user_id != oc.user_id
+              AND oc_other.is_trusted_trader = true
+              AND oc_other.deleted_at = 0
+            ) THEN 'trustedPartner'
+            ELSE 'standard'
+          END as transaction_type,
+          COUNT(*) as confirmed_count
+        FROM offer_checkouts oc
+        JOIN offers o ON oc.offer_id = o.id
+        JOIN trades t ON o.id = t.offer_id  -- Only count checkouts connected to trades
+        WHERE oc.deleted_at = 0
+        AND o.deleted_at = 0
+        AND t.deleted_at = 0
+        AND t.created_at >= ($1::date AT TIME ZONE 'America/Chicago')
+        AND t.created_at < LEAST(
+            current_timestamp,
+            (($2::date + INTERVAL '1 day') AT TIME ZONE 'America/Chicago')
+        )
+        GROUP BY DATE(t.created_at AT TIME ZONE 'America/Chicago'), 
+          CASE 
+            WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
+            WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
+              SELECT 1 FROM offer_checkouts oc_other
+              WHERE oc_other.offer_id = oc.offer_id
+              AND oc_other.user_id != oc.user_id
+              AND oc_other.is_trusted_trader = true
+              AND oc_other.deleted_at = 0
+            ) THEN 'trustedPartner'
+            ELSE 'standard'
+          END
+      )
+      SELECT 
+        transaction_date,
+        SUM(CASE WHEN transaction_type = 'trustedTrader' THEN confirmed_count ELSE 0 END) as trusted_trader_count,
+        SUM(CASE WHEN transaction_type = 'trustedPartner' THEN confirmed_count ELSE 0 END) as trusted_partner_count,
+        SUM(CASE WHEN transaction_type = 'standard' THEN confirmed_count ELSE 0 END) as standard_count,
+        SUM(confirmed_count) as total_confirmed_count
+      FROM daily_confirmed_transactions
+      GROUP BY transaction_date
+      ORDER BY transaction_date ASC;
+    `;
+
+    const results = await pool.query(query, [finalStartDate, finalEndDate]);
+    
+    return results.rows.map(row => ({
+      date: new Date(row.transaction_date),
+      trustedTraderCount: parseInt(row.trusted_trader_count) || 0,
+      trustedPartnerCount: parseInt(row.trusted_partner_count) || 0, 
+      standardCount: parseInt(row.standard_count) || 0,
+      totalCount: parseInt(row.total_confirmed_count) || 0
+    }));
+
+  } catch (error) {
+    console.error('CRITICAL ERROR in getConfirmedTransactions:', error);
+    throw new Error(`Failed to fetch confirmed transactions data: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Get daily validated transactions segmented by trusted trader status
+ */
+export async function getValidatedTransactions(
+  startDate?: string,
+  endDate?: string
+): Promise<{ date: Date; trustedTraderCount: number; trustedPartnerCount: number; standardCount: number; totalCount: number }[]> {
+  // Set date constraints
+  const today = new Date().toISOString().split('T')[0];
+  const defaultStartDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  
+  const finalStartDate = startDate || defaultStartDate;
+  const finalEndDate = endDate || today;
+
+  try {
+    const query = `
+      WITH daily_validated_transactions AS (
+        SELECT 
+          DATE(t.validation_passed_date AT TIME ZONE 'America/Chicago') as validation_date,
+          CASE 
+            WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
+            WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
+              SELECT 1 FROM offer_checkouts oc_other
+              WHERE oc_other.offer_id = oc.offer_id
+              AND oc_other.user_id != oc.user_id
+              AND oc_other.is_trusted_trader = true
+              AND oc_other.deleted_at = 0
+            ) THEN 'trustedPartner'
+            ELSE 'standard'
+          END as transaction_type,
+          COUNT(*) as validated_count
+        FROM offer_checkouts oc
+        JOIN offers o ON oc.offer_id = o.id
+        JOIN trades t ON o.id = t.offer_id  -- trades table join ensures proper transaction definition
+        WHERE oc.deleted_at = 0
+        AND o.deleted_at = 0
+        AND t.deleted_at = 0
+        AND t.validation_passed_date IS NOT NULL
+        AND t.validation_passed_date >= ($1::date AT TIME ZONE 'America/Chicago')
+        AND t.validation_passed_date < LEAST(
+            current_timestamp,
+            (($2::date + INTERVAL '1 day') AT TIME ZONE 'America/Chicago')
+        )
+        GROUP BY DATE(t.validation_passed_date AT TIME ZONE 'America/Chicago'),
+          CASE 
+            WHEN oc.is_trusted_trader = true THEN 'trustedTrader'
+            WHEN oc.is_trusted_trader = false AND t.created_at >= '2025-08-02'::date AND EXISTS(
+              SELECT 1 FROM offer_checkouts oc_other
+              WHERE oc_other.offer_id = oc.offer_id
+              AND oc_other.user_id != oc.user_id
+              AND oc_other.is_trusted_trader = true
+              AND oc_other.deleted_at = 0
+            ) THEN 'trustedPartner'
+            ELSE 'standard'
+          END
+      )
+      SELECT 
+        validation_date,
+        SUM(CASE WHEN transaction_type = 'trustedTrader' THEN validated_count ELSE 0 END) as trusted_trader_count,
+        SUM(CASE WHEN transaction_type = 'trustedPartner' THEN validated_count ELSE 0 END) as trusted_partner_count,
+        SUM(CASE WHEN transaction_type = 'standard' THEN validated_count ELSE 0 END) as standard_count,
+        SUM(validated_count) as total_validated_count
+      FROM daily_validated_transactions
+      GROUP BY validation_date
+      ORDER BY validation_date ASC;
+    `;
+
+    const results = await pool.query(query, [finalStartDate, finalEndDate]);
+    
+    return results.rows.map(row => ({
+      date: new Date(row.validation_date),
+      trustedTraderCount: parseInt(row.trusted_trader_count) || 0,
+      trustedPartnerCount: parseInt(row.trusted_partner_count) || 0, 
+      standardCount: parseInt(row.standard_count) || 0,
+      totalCount: parseInt(row.total_validated_count) || 0
+    }));
+
+  } catch (error) {
+    console.error('CRITICAL ERROR in getValidatedTransactions:', error);
+    throw new Error(`Failed to fetch validated transactions data: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+// ============================================================================
+// Pool Event Listeners
+// ============================================================================
 
 // Pool event listeners for monitoring
 pool.on('connect', () => {

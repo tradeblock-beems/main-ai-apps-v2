@@ -14,8 +14,14 @@ config({ path: '/Users/AstroLab/Desktop/code-projects/main-ai-apps/.env' });
 // Database configuration
 export const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is required');
+// In production (Railway), log warning but allow app to start without database
+// This enables deployment before database is configured
+if (!DATABASE_URL && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️  DATABASE_URL environment variable is not configured');
+  console.warn('⚠️  Application will run in degraded mode without database features');
+  console.warn('⚠️  Configure DATABASE_URL in Railway dashboard to enable analytics');
+} else if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required in development');
 }
 
 // Application configuration
