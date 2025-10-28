@@ -8,8 +8,13 @@
 import { config } from 'dotenv';
 import { join } from 'path';
 
-// Load environment variables from the project root .env file  
-config({ path: '/Users/AstroLab/Desktop/code-projects/main-ai-apps/.env' });
+// Load environment variables from the project root .env file
+// In production (Railway), environment variables are provided directly and .env is not needed
+if (process.env.NODE_ENV !== 'production') {
+  // Use relative path resolution for local development
+  const envPath = join(process.cwd(), '..', '..', '.env');
+  config({ path: envPath });
+}
 
 // Database configuration
 export const DATABASE_URL = process.env.DATABASE_URL;

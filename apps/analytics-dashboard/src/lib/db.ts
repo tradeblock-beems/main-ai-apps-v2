@@ -579,15 +579,17 @@ export async function getDailyOffersPerActiveUser(
     // Get daily offers from existing PostgreSQL query  
     const dailyOffers = await getDailyOffers(constrainedStartDate, constrainedEndDate);
     
-    // Execute PostHog script for active users using absolute paths
+    // Execute PostHog script for active users using relative paths
+    // In production (Railway), process.cwd() will be the application root
+    const projectRoot = path.join(process.cwd(), '..', '..');
     const pythonScript = `
 import sys
 import os
 import json
 
-# Add absolute paths to Python path
-sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps')
-sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps/basic_capabilities/internal_db_queries_toolbox')
+# Add relative paths to Python path (Railway-compatible)
+sys.path.insert(0, '${projectRoot}')
+sys.path.insert(0, '${path.join(projectRoot, 'basic_capabilities', 'internal_db_queries_toolbox')}')
 
 try:
     from basic_capabilities.internal_db_queries_toolbox.posthog_utils import get_daily_active_users
@@ -602,7 +604,7 @@ except Exception as e:
     const activeUsersResult = await new Promise((resolve, reject) => {
       const pythonProcess = spawn('python3', ['-c', pythonScript], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        cwd: '/Users/AstroLab/Desktop/code-projects/main-ai-apps'
+        cwd: projectRoot
       });
 
       let stdout = '';
@@ -641,6 +643,9 @@ except Exception as e:
       throw new Error(`PostHog error: ${activeUsersResult.error}`);
     }
 
+    // Type assertion after error check - activeUsersResult is now guaranteed to be PostHogActiveUser[]
+    const activeUsersData = activeUsersResult as PostHogActiveUser[];
+
     // Create lookup map for offers data
     const offersMap: Map<string, OfferDataForMap> = new Map();
     dailyOffers.forEach(offer => {
@@ -651,7 +656,7 @@ except Exception as e:
     // Build combined data using the new logic: "show if both offers and active users have valid data"
     const validData: ValidDataItem[] = [];
 
-    activeUsersResult.forEach((activeUser: PostHogActiveUser) => {
+    activeUsersData.forEach((activeUser: PostHogActiveUser) => {
       const dateStr = activeUser.date;
       
       // Strict constraint: Only include dates from PostHog availability onwards
@@ -715,15 +720,17 @@ export async function getDailyUniqueOfferCreators(
   const constrainedStartDate = finalStartDate < POSTHOG_START_DATE ? POSTHOG_START_DATE : finalStartDate;
 
   try {
-    // Execute PostHog script for unique creators using absolute paths
+    // Execute PostHog script for unique creators using relative paths
+    // In production (Railway), process.cwd() will be the application root
+    const projectRoot = path.join(process.cwd(), '..', '..');
     const pythonScript = `
 import sys
 import os
 import json
 
-# Add absolute paths to Python path
-sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps')
-sys.path.insert(0, '/Users/AstroLab/Desktop/code-projects/main-ai-apps/basic_capabilities/internal_db_queries_toolbox')
+# Add relative paths to Python path (Railway-compatible)
+sys.path.insert(0, '${projectRoot}')
+sys.path.insert(0, '${path.join(projectRoot, 'basic_capabilities', 'internal_db_queries_toolbox')}')
 
 try:
     from basic_capabilities.internal_db_queries_toolbox.posthog_utils import get_daily_unique_offer_creators
@@ -738,7 +745,7 @@ except Exception as e:
     const result = await new Promise((resolve, reject) => {
       const pythonProcess = spawn('python3', ['-c', pythonScript], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        cwd: '/Users/AstroLab/Desktop/code-projects/main-ai-apps'
+        cwd: projectRoot
       });
 
       let stdout = '';
@@ -777,8 +784,11 @@ except Exception as e:
       throw new Error(`PostHog error: ${result.error}`);
     }
 
+    // Type assertion after error check - result is now guaranteed to be PostHogUniqueCreator[]
+    const uniqueCreatorsData = result as PostHogUniqueCreator[];
+
     // Convert to expected format with Date objects
-    return result.map((item: PostHogUniqueCreator): DailyUniqueCreatorItem => ({
+    return uniqueCreatorsData.map((item: PostHogUniqueCreator): DailyUniqueCreatorItem => ({
       date: new Date(item.date),
       uniqueCreators: item.unique_creators
     })).sort((a: DailyUniqueCreatorItem, b: DailyUniqueCreatorItem) => a.date.getTime() - b.date.getTime());
