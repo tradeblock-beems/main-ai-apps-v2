@@ -2,10 +2,15 @@
   "name": "push-cadence-service",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.19.5",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev -p 3002",
     "build": "next build",
     "start": "dotenv -e ../../.env -- next start -p 3002",
+    "start:railway": "next start --port $PORT",
     "lint": "next lint"
   },
   "dependencies": {
