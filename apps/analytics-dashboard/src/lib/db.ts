@@ -1,8 +1,10 @@
 /**
  * Database Connection Utility
- * 
+ *
  * PostgreSQL connection management with connection pooling,
  * error handling, and optimized query execution for analytics workloads.
+ *
+ * @module db
  */
 
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
