@@ -14,8 +14,8 @@ interface ScheduledPushData {
   scheduledDate: string;
   scheduledTime?: string;
   audienceCriteria?: {
-    trustedTraderStatus: string;
-    trustedTraderCandidate: string;
+    trustedTraderStatus: 'any' | 'trusted' | 'non-trusted';
+    trustedTraderCandidate: 'any' | 'candidate' | 'non-candidate';
     activityDays: number;
     tradingDays: number;
     minTrades: number;
