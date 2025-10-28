@@ -15,6 +15,9 @@ export default function Home() {
           <Link href="/push-blaster" className="px-6 py-3 bg-green-600 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors">
             Push Blaster
           </Link>
+          <Link href="/analytics-dashboard" className="px-6 py-3 bg-purple-600 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors">
+            Analytics Dashboard
+          </Link>
         </div>
       </div>
     </main>
