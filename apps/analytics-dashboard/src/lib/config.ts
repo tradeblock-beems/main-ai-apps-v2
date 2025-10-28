@@ -6,14 +6,13 @@
  */
 
 import { config } from 'dotenv';
-import { join } from 'path';
+import { ENV_PATH } from './paths';
 
 // Load environment variables from the project root .env file
 // In production (Railway), environment variables are provided directly and .env is not needed
 if (process.env.NODE_ENV !== 'production') {
-  // Use relative path resolution for local development
-  const envPath = join(process.cwd(), '..', '..', '.env');
-  config({ path: envPath });
+  // Use shared path constant for Railway-compatible path resolution
+  config({ path: ENV_PATH });
 }
 
 // Database configuration

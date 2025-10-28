@@ -507,7 +507,7 @@ export async function closeDatabasePool(): Promise<void> {
 // ============================================================================
 
 import { spawn } from 'child_process';
-import path from 'path';
+import { PROJECT_ROOT, PYTHON_TOOLBOX_PATH } from './paths';
 
 // PostHog data availability starts from this date
 const POSTHOG_START_DATE = '2025-06-16';
@@ -576,20 +576,18 @@ export async function getDailyOffersPerActiveUser(
   const constrainedEndDate = finalEndDate;
 
   try {
-    // Get daily offers from existing PostgreSQL query  
+    // Get daily offers from existing PostgreSQL query
     const dailyOffers = await getDailyOffers(constrainedStartDate, constrainedEndDate);
-    
-    // Execute PostHog script for active users using relative paths
-    // In production (Railway), process.cwd() will be the application root
-    const projectRoot = path.join(process.cwd(), '..', '..');
+
+    // Execute PostHog script for active users using Railway-compatible paths
     const pythonScript = `
 import sys
 import os
 import json
 
 # Add relative paths to Python path (Railway-compatible)
-sys.path.insert(0, '${projectRoot}')
-sys.path.insert(0, '${path.join(projectRoot, 'basic_capabilities', 'internal_db_queries_toolbox')}')
+sys.path.insert(0, '${PROJECT_ROOT}')
+sys.path.insert(0, '${PYTHON_TOOLBOX_PATH}')
 
 try:
     from basic_capabilities.internal_db_queries_toolbox.posthog_utils import get_daily_active_users
@@ -604,7 +602,7 @@ except Exception as e:
     const activeUsersResult = await new Promise((resolve, reject) => {
       const pythonProcess = spawn('python3', ['-c', pythonScript], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        cwd: projectRoot
+        cwd: PROJECT_ROOT
       });
 
       let stdout = '';
@@ -720,17 +718,15 @@ export async function getDailyUniqueOfferCreators(
   const constrainedStartDate = finalStartDate < POSTHOG_START_DATE ? POSTHOG_START_DATE : finalStartDate;
 
   try {
-    // Execute PostHog script for unique creators using relative paths
-    // In production (Railway), process.cwd() will be the application root
-    const projectRoot = path.join(process.cwd(), '..', '..');
+    // Execute PostHog script for unique creators using Railway-compatible paths
     const pythonScript = `
 import sys
 import os
 import json
 
 # Add relative paths to Python path (Railway-compatible)
-sys.path.insert(0, '${projectRoot}')
-sys.path.insert(0, '${path.join(projectRoot, 'basic_capabilities', 'internal_db_queries_toolbox')}')
+sys.path.insert(0, '${PROJECT_ROOT}')
+sys.path.insert(0, '${PYTHON_TOOLBOX_PATH}')
 
 try:
     from basic_capabilities.internal_db_queries_toolbox.posthog_utils import get_daily_unique_offer_creators
@@ -745,7 +741,7 @@ except Exception as e:
     const result = await new Promise((resolve, reject) => {
       const pythonProcess = spawn('python3', ['-c', pythonScript], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        cwd: projectRoot
+        cwd: PROJECT_ROOT
       });
 
       let stdout = '';
