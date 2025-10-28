@@ -5,8 +5,44 @@ import fs from 'fs';
 import path from 'path';
 import { UniversalAutomation, ScheduledPushMigration, AutomationResponse } from '@/types/automation';
 
-// Absolute paths for reliability - no relative path confusion
-const AUTOMATIONS_DIR = '/Users/AstroLab/Desktop/code-projects/main-ai-apps/apps/push-blaster/.automations';
+// Type definitions for legacy scheduled push data
+interface ScheduledPushData {
+  id: string;
+  pushTitle: string;
+  pushBody: string;
+  deepLink?: string;
+  scheduledDate: string;
+  scheduledTime?: string;
+  audienceCriteria?: {
+    trustedTraderStatus: string;
+    trustedTraderCandidate: string;
+    activityDays: number;
+    tradingDays: number;
+    minTrades: number;
+    dataPacks: string[];
+  };
+}
+
+// Type for execution log data
+interface ExecutionLogData {
+  status?: string;
+  phase?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+// Type for loaded execution logs
+interface ExecutionLog {
+  automationId: string;
+  timestamp: string;
+  [key: string]: unknown;
+}
+
+// Use relative paths from process.cwd() for Railway compatibility
+// In development: resolves to project root
+// In production (Railway): resolves to deployment directory
+const BASE_DIR = process.cwd();
+const AUTOMATIONS_DIR = path.join(BASE_DIR, '.automations');
 const TEMPLATES_DIR = path.join(AUTOMATIONS_DIR, 'templates');
 const EXECUTIONS_DIR = path.join(AUTOMATIONS_DIR, 'executions');
 
@@ -50,12 +86,13 @@ export class AutomationStorage {
         data: automation,
         message: 'Automation saved successfully'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError('Failed to save automation', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       return {
         success: false,
-        message: `Failed to save automation: ${error.message}`,
-        errors: [error.message]
+        message: `Failed to save automation: ${errorMessage}`,
+        errors: [errorMessage]
       };
     }
   }
@@ -76,8 +113,8 @@ export class AutomationStorage {
       
       this.log(`Automation loaded: ${automationId}`);
       return automation;
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError(`Failed to load automation ${automationId}`, error);
       return null;
     }
@@ -90,20 +127,20 @@ export class AutomationStorage {
     try {
       const files = fs.readdirSync(AUTOMATIONS_DIR)
         .filter(file => file.endsWith('.json') && !file.startsWith('template_'));
-      
+
       const automations: UniversalAutomation[] = [];
-      
+
       for (const file of files) {
         const filePath = path.join(AUTOMATIONS_DIR, file);
         const data = fs.readFileSync(filePath, 'utf-8');
         const automation = JSON.parse(data) as UniversalAutomation;
         automations.push(automation);
       }
-      
+
       this.log(`Loaded ${automations.length} automations`);
       return automations;
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError('Failed to load automations', error);
       return [];
     }
@@ -115,28 +152,29 @@ export class AutomationStorage {
   async deleteAutomation(automationId: string): Promise<AutomationResponse> {
     try {
       const filePath = path.join(AUTOMATIONS_DIR, `${automationId}.json`);
-      
+
       if (!fs.existsSync(filePath)) {
         return {
           success: false,
           message: 'Automation not found'
         };
       }
-      
+
       fs.unlinkSync(filePath);
-      
+
       this.log(`Automation deleted: ${automationId}`);
-      
+
       return {
         success: true,
         message: 'Automation deleted successfully'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError(`Failed to delete automation ${automationId}`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       return {
         success: false,
-        message: `Failed to delete automation: ${error.message}`,
-        errors: [error.message]
+        message: `Failed to delete automation: ${errorMessage}`,
+        errors: [errorMessage]
       };
     }
   }
@@ -166,7 +204,7 @@ export class AutomationStorage {
   /**
    * Migration utilities for converting scheduled pushes
    */
-  async migrateScheduledPush(scheduledPushData: any): Promise<UniversalAutomation> {
+  async migrateScheduledPush(scheduledPushData: ScheduledPushData): Promise<UniversalAutomation> {
     const automation: UniversalAutomation = {
       id: `migrated_${scheduledPushData.id}`,
       name: `Migrated: ${scheduledPushData.pushTitle}`,
@@ -262,8 +300,8 @@ export class AutomationStorage {
       fs.writeFileSync(migrationPath, JSON.stringify(migrations, null, 2));
       
       this.log(`Migration recorded: ${migration.scheduledPushId} -> ${migration.automationId}`);
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError('Failed to save migration record', error);
     }
   }
@@ -271,31 +309,31 @@ export class AutomationStorage {
   /**
    * Load existing scheduled pushes for migration
    */
-  async loadScheduledPushes(): Promise<any[]> {
+  async loadScheduledPushes(): Promise<ScheduledPushData[]> {
     try {
       const scheduledPushesDir = '/Users/AstroLab/Desktop/code-projects/main-ai-apps/apps/push-blaster/.scheduled-pushes';
-      
+
       if (!fs.existsSync(scheduledPushesDir)) {
         this.log('No scheduled pushes directory found');
         return [];
       }
-      
+
       const files = fs.readdirSync(scheduledPushesDir)
         .filter(file => file.endsWith('.json'));
-      
-      const scheduledPushes: any[] = [];
-      
+
+      const scheduledPushes: ScheduledPushData[] = [];
+
       for (const file of files) {
         const filePath = path.join(scheduledPushesDir, file);
         const data = fs.readFileSync(filePath, 'utf-8');
-        const push = JSON.parse(data);
+        const push = JSON.parse(data) as ScheduledPushData;
         scheduledPushes.push(push);
       }
-      
+
       this.log(`Found ${scheduledPushes.length} scheduled pushes for potential migration`);
       return scheduledPushes;
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError('Failed to load scheduled pushes', error);
       return [];
     }
@@ -304,23 +342,23 @@ export class AutomationStorage {
   /**
    * Save execution log
    */
-  async saveExecutionLog(automationId: string, executionData: any): Promise<void> {
+  async saveExecutionLog(automationId: string, executionData: ExecutionLogData): Promise<void> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `${automationId}_${timestamp}.json`;
       const filePath = path.join(EXECUTIONS_DIR, filename);
-      
+
       const logData = {
         automationId,
         timestamp: new Date().toISOString(),
         ...executionData
       };
-      
+
       fs.writeFileSync(filePath, JSON.stringify(logData, null, 2));
-      
+
       this.log(`Execution log saved: ${filename}`);
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError(`Failed to save execution log for ${automationId}`, error);
     }
   }
@@ -328,24 +366,24 @@ export class AutomationStorage {
   /**
    * Load execution logs for automation
    */
-  async loadExecutionLogs(automationId: string): Promise<any[]> {
+  async loadExecutionLogs(automationId: string): Promise<ExecutionLog[]> {
     try {
       const files = fs.readdirSync(EXECUTIONS_DIR)
         .filter(file => file.startsWith(automationId) && file.endsWith('.json'))
         .sort(); // Chronological order
-      
-      const logs: any[] = [];
-      
+
+      const logs: ExecutionLog[] = [];
+
       for (const file of files) {
         const filePath = path.join(EXECUTIONS_DIR, file);
         const data = fs.readFileSync(filePath, 'utf-8');
-        const log = JSON.parse(data);
+        const log = JSON.parse(data) as ExecutionLog;
         logs.push(log);
       }
-      
+
       return logs;
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError(`Failed to load execution logs for ${automationId}`, error);
       return [];
     }
@@ -376,12 +414,13 @@ export class AutomationStorage {
         backupPath,
         message: `Backup created with ${allAutomations.length} automations`
       };
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError('Failed to create backup', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       return {
         success: false,
-        message: `Failed to create backup: ${error.message}`
+        message: `Failed to create backup: ${errorMessage}`
       };
     }
   }
@@ -393,7 +432,7 @@ export class AutomationStorage {
     console.log(`${this.logPrefix} ${new Date().toISOString()} - ${message}`);
   }
 
-  private logError(message: string, error: any): void {
+  private logError(message: string, error: unknown): void {
     console.error(`${this.logPrefix} ${new Date().toISOString()} - ERROR: ${message}`, error);
   }
 }

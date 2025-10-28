@@ -3,6 +3,19 @@ import pool from '@/lib/db';
 
 export async function GET() {
   try {
+    // Check if pool is initialized
+    if (!pool) {
+      return NextResponse.json({
+        status: 'degraded',
+        service: 'push-cadence',
+        timestamp: new Date().toISOString(),
+        database: 'not_configured',
+        message: 'Service is running but database pool is not initialized',
+        note: 'Configure PUSH_CADENCE_DATABASE_URL environment variable to enable database features',
+        memoryUsage: process.memoryUsage()
+      });
+    }
+
     // Simple DB query to verify connection
     await pool.query('SELECT 1');
 
@@ -20,9 +33,10 @@ export async function GET() {
       status: 'degraded',
       service: 'push-cadence',
       timestamp: new Date().toISOString(),
-      database: 'not_configured',
-      message: 'Service is running but database connection is not available',
-      note: 'Configure PUSH_CADENCE_DATABASE_URL environment variable to enable database features',
+      database: 'error',
+      message: 'Service is running but database connection failed',
+      error: String(error),
+      note: 'Check PUSH_CADENCE_DATABASE_URL environment variable and database availability',
       memoryUsage: process.memoryUsage()
     });
   }
