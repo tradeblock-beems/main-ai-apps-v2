@@ -1,0 +1,66 @@
+name: Railway Configuration Check
+on:
+  push:
+    paths:
+      - 'apps/*/package.json'
+      - 'apps/*/railway.toml'
+  pull_request:
+    paths:
+      - 'apps/*/package.json'
+      - 'apps/*/railway.toml'
+
+jobs:
+  validate-railway-config:
+    runs-on: ubuntu-latest
+    name: Validate Railway Configuration
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate start:railway commands include PORT
+        run: |
+          echo "🔍 Checking Railway start commands..."
+          ERRORS=0
+
+          for pkg in apps/*/package.json; do
+            if [ -f "$pkg" ]; then
+              if grep -q '"start:railway"' "$pkg"; then
+                if ! grep -E '"start:railway".*\$PORT' "$pkg" > /dev/null 2>&1; then
+                  echo "❌ ERROR: $pkg has start:railway without \$PORT"
+                  ERRORS=$((ERRORS + 1))
+                else
+                  echo "✅ $pkg: start:railway properly configured"
+                fi
+              fi
+            fi
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            echo ""
+            echo "🚫 FAILED: $ERRORS Railway configuration error(s)"
+            echo "All start:railway scripts must include --port \$PORT"
+            exit 1
+          fi
+
+          echo "✅ All Railway start commands properly configured"
+
+      - name: Check railway.toml health checks
+        run: |
+          echo "🔍 Checking railway.toml configurations..."
+          WARNINGS=0
+
+          for toml in apps/*/railway.toml; do
+            if [ -f "$toml" ]; then
+              if ! grep -q 'healthcheckPath' "$toml"; then
+                echo "⚠️  WARNING: $toml missing healthcheckPath"
+                WARNINGS=$((WARNINGS + 1))
+              else
+                echo "✅ $toml: healthcheckPath configured"
+              fi
+            fi
+          done
+
+          if [ $WARNINGS -gt 0 ]; then
+            echo ""
+            echo "⚠️  $WARNINGS warning(s) - consider adding health checks"
+          fi

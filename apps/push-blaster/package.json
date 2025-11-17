@@ -2,12 +2,17 @@
   "name": "push-blaster",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.19.5",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "concurrently --names \"PUSH-BLASTER,CADENCE-SERVICE\" --prefix-colors \"blue,green\" \"npm run dev:push-only\" \"npm run dev:cadence\"",
     "dev:push-only": "dotenv -e ../../.env -- next dev -p 3001",
     "dev:cadence": "cd ../push-cadence-service && npm run dev",
     "build": "next build",
     "start": "dotenv -e ../../.env -- next start -p 3001",
+    "start:railway": "next start --port $PORT",
     "lint": "next lint",
     "dev:push": "npm run dev",
     "build:prod": "npm run build && cd ../push-cadence-service && npm run build",

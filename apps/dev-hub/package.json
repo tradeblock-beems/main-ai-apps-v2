@@ -7,7 +7,7 @@
     "dev:hub": "dotenv -e ../../.env -- next dev",
     "build": "next build",
     "start": "next start",
-    "start:railway": "next start",
+    "start:railway": "next start --port $PORT",
     "lint": "next lint"
   },
   "dependencies": {
