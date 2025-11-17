@@ -21,7 +21,7 @@ export function validateStartupEnvironment(): void {
     process.exit(1); // Fail loud, fail fast
   }
 
-  console.log('✅ Startup validation passed: All required environment variables present');
+  console.log('Startup validation passed: All required environment variables present');
 }
 
 // Auto-run on import in production
