@@ -7,7 +7,15 @@ const REQUIRED_ENV_VARS = [
   'CADENCE_SERVICE_URL'
 ] as const;
 
+// Track if validation has already run to avoid duplicate logs
+let validationComplete = false;
+
 export function validateStartupEnvironment(): void {
+  if (validationComplete) {
+    return; // Only run once
+  }
+  validationComplete = true;
+
   if (process.env.NODE_ENV !== 'production') {
     return; // Only enforce in production
   }
@@ -22,10 +30,15 @@ export function validateStartupEnvironment(): void {
   const missing = REQUIRED_ENV_VARS.filter(varName => !process.env[varName]);
 
   if (missing.length > 0) {
-    const errorMessage = `FATAL: Missing required environment variables: ${missing.join(', ')}`;
+    const errorMessage = `CRITICAL WARNING: Missing required environment variables: ${missing.join(', ')}`;
+    console.error('='.repeat(80));
     console.error(errorMessage);
-    console.error('Service cannot start without these variables configured in Railway dashboard.');
-    process.exit(1); // Fail loud, fail fast
+    console.error('Service will start in DEGRADED MODE - Push notifications will NOT work!');
+    console.error('Configure these variables in Railway dashboard immediately.');
+    console.error('='.repeat(80));
+    // Don't exit - let service start in degraded mode to avoid crash loops
+    // Features requiring these vars will fail with clear errors when used
+    return;
   }
 
   console.log('Startup validation passed: All required environment variables present');
