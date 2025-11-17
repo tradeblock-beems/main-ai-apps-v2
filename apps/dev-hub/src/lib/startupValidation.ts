@@ -6,6 +6,12 @@ export function validateStartupEnvironment(): void {
     return;
   }
 
+  // Skip validation during Next.js build phase
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    console.log('Startup validation skipped: Build phase');
+    return;
+  }
+
   console.log('Startup validation passed: All required environment variables present');
 }
 

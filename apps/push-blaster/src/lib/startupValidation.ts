@@ -12,6 +12,13 @@ export function validateStartupEnvironment(): void {
     return; // Only enforce in production
   }
 
+  // Skip validation during Next.js build phase (NEXT_PHASE is set during build)
+  // This prevents build failures when runtime env vars aren't available
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    console.log('Startup validation skipped: Build phase');
+    return;
+  }
+
   const missing = REQUIRED_ENV_VARS.filter(varName => !process.env[varName]);
 
   if (missing.length > 0) {
