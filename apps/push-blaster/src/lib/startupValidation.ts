@@ -23,16 +23,15 @@ export function validateStartupEnvironment(): void {
   // Skip validation during Next.js build phase (NEXT_PHASE is set during build)
   // This prevents build failures when runtime env vars aren't available
   if (process.env.NEXT_PHASE === 'phase-production-build') {
-    console.log('Startup validation skipped: Build phase');
+    console.log('[push-blaster] Startup validation skipped: Build phase');
     return;
   }
 
   const missing = REQUIRED_ENV_VARS.filter(varName => !process.env[varName]);
 
   if (missing.length > 0) {
-    const errorMessage = `CRITICAL WARNING: Missing required environment variables: ${missing.join(', ')}`;
     console.error('='.repeat(80));
-    console.error(errorMessage);
+    console.error(`[push-blaster] CRITICAL WARNING: Missing environment variables: ${missing.join(', ')}`);
     console.error('Service will start in DEGRADED MODE - Push notifications will NOT work!');
     console.error('Configure these variables in Railway dashboard immediately.');
     console.error('='.repeat(80));
@@ -41,7 +40,7 @@ export function validateStartupEnvironment(): void {
     return;
   }
 
-  console.log('Startup validation passed: All required environment variables present');
+  console.log('[push-blaster] Startup validation passed: All required environment variables present');
 }
 
 // Auto-run on import in production
