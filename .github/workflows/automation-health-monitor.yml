@@ -1,0 +1,32 @@
+name: Automation Health Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:  # Manual trigger for testing
+
+jobs:
+  monitor-automation-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq for JSON parsing
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run automation health check
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PUSH_BLASTER_HEALTH_URL: https://push-blaster-production.up.railway.app/api/health
+        run: |
+          chmod +x scripts/monitor-automation-health.sh
+          bash scripts/monitor-automation-health.sh
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: automation-health-logs
+          path: ~/.automation-health.log
+          retention-days: 7

@@ -2,14 +2,15 @@
 // Core orchestrator for all automation types building on existing push-blaster patterns
 
 import * as cron from 'node-cron';
-import { 
-  UniversalAutomation, 
-  ExecutionConfig, 
-  AutomationStatus, 
+import {
+  UniversalAutomation,
+  ExecutionConfig,
+  AutomationStatus,
   ExecutionPhase,
   AutomationPush,
-  ExecutionResponse 
+  ExecutionResponse
 } from '@/types/automation';
+import pool from '@/lib/db';
 
 interface ScheduledJob {
   automationId: string;
@@ -19,23 +20,79 @@ interface ScheduledJob {
 
 export class AutomationEngine {
   private scheduledJobs: Map<string, ScheduledJob> = new Map();
-  private activeExecutions: Map<string, { 
-    automationId: string; 
-    startTime: Date; 
+  private activeExecutions: Map<string, {
+    automationId: string;
+    startTime: Date;
     currentPhase: string;
     abortController?: AbortController;
   }> = new Map();
   private logPrefix = '[AutomationEngine]';
   private instanceId: string = `engine-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+  private lastRestorationAttempt: string | null = null;
+  private lastRestorationSuccess: boolean = false;
 
   constructor() {
     this.log(`🚀 Automation Engine initialized - Instance ID: ${this.instanceId}`);
-    
+
     // Process exit cleanup - destroy all cron jobs when server stops
     this.setupProcessCleanup();
-    
-    // Simple restoration on startup - no race conditions
-    this.restoreActiveAutomations();
+
+    // Startup restoration with loud logging
+    this.performStartupRestoration();
+  }
+
+  /**
+   * Perform startup restoration with loud logging banners
+   */
+  private performStartupRestoration(): void {
+    const startTime = Date.now();
+
+    console.log('═'.repeat(80));
+    console.log(`[STARTUP] AutomationEngine Restoration Starting`);
+    console.log(`[STARTUP] Instance ID: ${this.instanceId}`);
+    console.log(`[STARTUP] Timestamp: ${new Date().toISOString()}`);
+    console.log('═'.repeat(80));
+
+    try {
+      // Restore active automations (existing method)
+      this.restoreActiveAutomations();
+
+      const duration = Date.now() - startTime;
+      const scheduledCount = this.scheduledJobs.size;
+
+      // Success banner
+      console.log('═'.repeat(80));
+      console.log(`[STARTUP] ✅ Restoration SUCCESS`);
+      console.log(`[STARTUP] Scheduled Jobs: ${scheduledCount}`);
+      console.log(`[STARTUP] Duration: ${duration}ms`);
+      console.log(`[STARTUP] Jobs:`);
+
+      this.scheduledJobs.forEach((jobInfo, automationId) => {
+        console.log(`[STARTUP]   - Automation ${automationId.substring(0, 8)}...`);
+      });
+
+      console.log('═'.repeat(80));
+
+      // Store restoration metadata
+      this.lastRestorationAttempt = new Date().toISOString();
+      this.lastRestorationSuccess = true;
+
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      // Failure banner
+      console.error('═'.repeat(80));
+      console.error(`[STARTUP] ❌ Restoration FAILED`);
+      console.error(`[STARTUP] Duration: ${duration}ms`);
+      console.error(`[STARTUP] Error: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('═'.repeat(80));
+
+      // Store restoration metadata
+      this.lastRestorationAttempt = new Date().toISOString();
+      this.lastRestorationSuccess = false;
+
+      // Don't throw - allow service to start in degraded mode
+    }
   }
 
   /**
@@ -211,11 +268,12 @@ export class AutomationEngine {
         message: `Automation "${automation.name}" scheduled successfully`
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError('Failed to schedule automation', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        message: `Failed to schedule automation: ${error.message}`
+        message: `Failed to schedule automation: ${errorMessage}`
       };
     }
   }
@@ -224,20 +282,30 @@ export class AutomationEngine {
    * Execute automation timeline (30-minute lead time process)
    */
   private async executeAutomation(automationId: string): Promise<void> {
+    const startTime = new Date();
+    let executionRecordId = '';
+
     try {
       this.log(`Starting execution timeline for automation: ${automationId}`);
-      
+
       // Load automation data
       const automation = await this.loadAutomation(automationId);
       if (!automation) {
         throw new Error(`Automation ${automationId} not found`);
       }
 
-      // Track active execution
+      // Track execution start in database
+      executionRecordId = await this.trackExecutionStart(
+        automation.id,
+        automation.name,
+        this.instanceId
+      );
+
+      // Track active execution in memory
       const abortController = new AbortController();
       this.activeExecutions.set(automationId, {
         automationId,
-        startTime: new Date(),
+        startTime,
         currentPhase: 'starting',
         abortController
       });
@@ -245,7 +313,7 @@ export class AutomationEngine {
       // Initialize execution config
       const executionConfig: ExecutionConfig = {
         currentPhase: 'audience_generation',
-        startTime: new Date().toISOString(),
+        startTime: startTime.toISOString(),
         expectedEndTime: this.calculateExpectedEndTime(automation),
         audienceGenerated: false,
         testsSent: false,
@@ -254,19 +322,36 @@ export class AutomationEngine {
         emergencyStopRequested: false
       };
 
+      // Initialize metrics tracking
+      const metrics = {
+        audienceSize: 0,
+        pushesSent: 0,
+        pushesFailed: 0,
+        errorMessage: undefined as string | undefined,
+        errorStack: undefined as string | undefined
+      };
+
       try {
         // Execute the timeline (with abort signal)
-        await this.executeTimeline(automation, executionConfig, abortController.signal);
-        
+        await this.executeTimeline(automation, executionConfig, abortController.signal, executionRecordId);
+
+        // Track successful completion
+        await this.trackExecutionComplete(executionRecordId, 'completed', metrics, startTime);
+
         this.log(`Completed execution for automation: ${automationId}`);
+      } catch (error: unknown) {
+        // Track failure with error details
+        metrics.errorMessage = error instanceof Error ? error.message : String(error);
+        metrics.errorStack = error instanceof Error ? error.stack : undefined;
+        await this.trackExecutionComplete(executionRecordId, 'failed', metrics, startTime);
+
+        throw error; // Re-throw to be caught by outer catch
       } finally {
         // Always remove from active executions when done
         this.activeExecutions.delete(automationId);
       }
 
-    } catch (error: any) {
-      // Clean up active execution on error
-      this.activeExecutions.delete(automationId);
+    } catch (error: unknown) {
       this.logError(`Automation execution failed for ${automationId}`, error);
       // No complex failure handling - just log and continue
     }
@@ -275,54 +360,65 @@ export class AutomationEngine {
   /**
    * Execute the automation timeline phases
    */
-  private async executeTimeline(automation: UniversalAutomation, executionConfig: ExecutionConfig, abortSignal?: AbortSignal): Promise<void> {
+  private async executeTimeline(
+    automation: UniversalAutomation,
+    executionConfig: ExecutionConfig,
+    abortSignal: AbortSignal | undefined,
+    executionRecordId: string
+  ): Promise<void> {
     const startTime = new Date();
     this.log(`🚀 TIMELINE START: Automation ${automation.id} execution pipeline beginning`);
     this.log(`📅 Send scheduled for: ${automation.schedule.executionTime} (${automation.schedule.timezone})`);
     this.log(`⏱️  Lead time: ${automation.schedule.leadTimeMinutes || 30} minutes`);
-    
+
     try {
       // Phase 1: Audience Generation (T-30 minutes)
+      await this.trackExecutionPhase(executionRecordId, 'audience_generation');
       this.updateExecutionPhase(automation.id, 'audience_generation');
       this.checkAbortSignal(abortSignal, automation.id);
       this.log(`📊 PHASE 1: Starting audience generation phase`);
       await this.executeAudienceGeneration(automation, executionConfig);
       this.log(`✅ PHASE 1: Audience generation completed successfully`);
-      
-      // Phase 2: Test Push Sending (T-25 minutes) 
+
+      // Phase 2: Test Push Sending (T-25 minutes)
+      await this.trackExecutionPhase(executionRecordId, 'test_sending');
       this.updateExecutionPhase(automation.id, 'test_sending');
       this.checkAbortSignal(abortSignal, automation.id);
       this.log(`🧪 PHASE 2: Starting test push sending phase`);
       await this.executeTestSending(automation, executionConfig);
       this.log(`✅ PHASE 2: Test push sending completed successfully`);
-      
+
       // Phase 3: Cancellation Window (T-25 to T-0)
+      await this.trackExecutionPhase(executionRecordId, 'cancellation_window');
       this.updateExecutionPhase(automation.id, 'cancellation_window');
       this.checkAbortSignal(abortSignal, automation.id);
       this.log(`⏳ PHASE 3: Starting cancellation window (until ${this.formatTime(new Date(executionConfig.cancellationDeadline))})`);
       await this.executeCancellationWindow(automation, executionConfig);
       this.log(`✅ PHASE 3: Cancellation window completed - proceeding to live execution`);
-      
+
       // Phase 4: Live Execution (T-0)
+      await this.trackExecutionPhase(executionRecordId, 'live_execution');
       this.updateExecutionPhase(automation.id, 'live_execution');
       this.checkAbortSignal(abortSignal, automation.id);
       this.log(`🔴 PHASE 4: Starting live execution phase`);
       await this.executeLiveSending(automation, executionConfig);
       this.log(`✅ PHASE 4: Live execution completed successfully`);
-      
+
       // Phase 5: Cleanup (for test automations)
+      await this.trackExecutionPhase(executionRecordId, 'cleanup');
       this.updateExecutionPhase(automation.id, 'cleanup');
       this.checkAbortSignal(abortSignal, automation.id);
       this.log(`🧹 PHASE 5: Starting cleanup phase`);
       await this.executeCleanup(automation, executionConfig);
       this.log(`✅ PHASE 5: Cleanup completed successfully`);
-      
+
       const totalDuration = Date.now() - startTime.getTime();
       this.log(`🎉 TIMELINE COMPLETE: Total execution time ${Math.round(totalDuration / 1000)}s`);
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       const totalDuration = Date.now() - startTime.getTime();
-      this.logError(`❌ TIMELINE FAILED: After ${Math.round(totalDuration / 1000)}s - ${error.message}`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logError(`❌ TIMELINE FAILED: After ${Math.round(totalDuration / 1000)}s - ${errorMessage}`, error);
       throw error;
     }
   }
@@ -414,8 +510,9 @@ export class AutomationEngine {
       executionConfig.audienceGenerated = true;
       this.log(`Audience generation completed for automation: ${automation.id}`);
       
-    } catch (error: any) {
-      throw new Error(`Audience generation failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Audience generation failed: ${errorMessage}`);
     }
   }
 
@@ -443,8 +540,9 @@ export class AutomationEngine {
       executionConfig.testsSent = true;
       this.log(`Test sending completed for automation: ${automation.id}`);
       
-    } catch (error: any) {
-      throw new Error(`Test sending failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Test sending failed: ${errorMessage}`);
     }
   }
 
@@ -535,9 +633,10 @@ export class AutomationEngine {
       this.log(`🎉 ${operation} completed successfully for automation: ${automation.id}`);
       this.log(`📊 All pushes processed through unified test-automation pipeline`);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError(`❌ ${operation} failed for automation ${automation.id}`, error);
-      throw new Error(`${operation} failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`${operation} failed: ${errorMessage}`);
     }
   }
 
@@ -635,9 +734,10 @@ export class AutomationEngine {
       // Reschedule
       return await this.scheduleAutomation(automation);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError('Failed to reschedule automation', error);
-      return { success: false, message: `Failed to reschedule: ${error.message}` };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, message: `Failed to reschedule: ${errorMessage}` };
     }
   }
 
@@ -651,7 +751,8 @@ export class AutomationEngine {
       // Simple cleanup - no complex state tracking
       
       // For test automations, clean up the scheduled job and delete the automation file
-      if ((automation.settings as any)?.isTest || automation.name?.includes('TEST SCHEDULED:')) {
+      const settingsWithTest = automation.settings as unknown as { isTest?: boolean };
+      if (settingsWithTest?.isTest || automation.name?.includes('TEST SCHEDULED:')) {
         this.log(`Cleaning up test automation: ${automation.id}`);
         
         // Remove from scheduled jobs
@@ -669,7 +770,7 @@ export class AutomationEngine {
           const { automationStorage } = await import('./automationStorage');
           await automationStorage.deleteAutomation(automation.id);
           this.log(`Deleted test automation file: ${automation.id}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
           this.logError(`Failed to delete test automation file ${automation.id}`, error);
         }
       }
@@ -677,7 +778,7 @@ export class AutomationEngine {
       executionConfig.currentPhase = 'completed';
       this.log(`Cleanup completed for automation: ${automation.id}`);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError(`Cleanup failed for automation ${automation.id}`, error);
     }
   }
@@ -721,9 +822,97 @@ export class AutomationEngine {
       const { automationStorage } = await import('./automationStorage');
       const automation = await automationStorage.loadAutomation(automationId);
       return automation;
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError(`Failed to load automation ${automationId}`, error);
       return null;
+    }
+  }
+
+  /**
+   * Database execution tracking methods
+   */
+  private async trackExecutionStart(
+    automationId: string,
+    automationName: string,
+    instanceId: string
+  ): Promise<string> {
+    try {
+      const result = await pool.query(
+        `INSERT INTO automation_executions
+         (automation_id, automation_name, status, current_phase, instance_id)
+         VALUES ($1, $2, 'running', 'audience_generation', $3)
+         RETURNING id`,
+        [automationId, automationName, instanceId]
+      );
+
+      const executionRecordId = result.rows[0].id;
+      console.log(`[TRACKING] Execution started: ${executionRecordId}`);
+      return executionRecordId;
+    } catch (error) {
+      console.error('[TRACKING] Failed to track execution start:', error);
+      return ''; // Continue execution even if tracking fails
+    }
+  }
+
+  private async trackExecutionComplete(
+    executionRecordId: string,
+    status: 'completed' | 'failed' | 'aborted',
+    metrics: {
+      audienceSize?: number;
+      pushesSent?: number;
+      pushesFailed?: number;
+      errorMessage?: string;
+      errorStack?: string;
+    },
+    startTime: Date
+  ): Promise<void> {
+    if (!executionRecordId) return;
+
+    try {
+      const durationMs = Date.now() - startTime.getTime();
+
+      await pool.query(
+        `UPDATE automation_executions
+         SET status = $1,
+             completed_at = NOW(),
+             duration_ms = $2,
+             audience_size = $3,
+             pushes_sent = $4,
+             pushes_failed = $5,
+             error_message = $6,
+             error_stack = $7
+         WHERE id = $8`,
+        [
+          status,
+          durationMs,
+          metrics.audienceSize || 0,
+          metrics.pushesSent || 0,
+          metrics.pushesFailed || 0,
+          metrics.errorMessage || null,
+          metrics.errorStack || null,
+          executionRecordId
+        ]
+      );
+
+      console.log(`[TRACKING] Execution completed: ${executionRecordId} (${status})`);
+    } catch (error) {
+      console.error('[TRACKING] Failed to track execution complete:', error);
+    }
+  }
+
+  private async trackExecutionPhase(
+    executionRecordId: string,
+    phase: string
+  ): Promise<void> {
+    if (!executionRecordId) return;
+
+    try {
+      await pool.query(
+        `UPDATE automation_executions SET current_phase = $1 WHERE id = $2`,
+        [phase, executionRecordId]
+      );
+    } catch (error) {
+      console.error('[TRACKING] Failed to track execution phase:', error);
     }
   }
 
@@ -754,7 +943,7 @@ export class AutomationEngine {
         throw new Error(`Script execution failed: ${result.error}`);
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError(`Failed to generate audience for automation ${automation.id}`, error);
       throw error;
     }
@@ -781,7 +970,7 @@ export class AutomationEngine {
       } else {
         throw new Error(`Test sequence failed: ${response.status}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logError(`Failed to send test sequence for automation ${automation.id}`, error);
       throw error;
     }
@@ -829,12 +1018,15 @@ export class AutomationEngine {
       // Read and parse CSV file
       const csvContent = fs.readFileSync(csvPath, 'utf8');
       const parseResult = Papa.parse(csvContent, { header: true, skipEmptyLines: true });
-      const userIds = parseResult.data.map((row: any) => row.user_id).filter(Boolean);
-      
+      const userIds = parseResult.data.map((row: unknown) => {
+        const rowData = row as { user_id?: string };
+        return rowData.user_id;
+      }).filter(Boolean);
+
       this.log(`Loaded ${userIds.length} user IDs from CSV: ${csvPath}`);
       return userIds;
-      
-    } catch (error: any) {
+
+    } catch (error: unknown) {
       this.logError(`Failed to load user IDs from CSV: ${csvPath}`, error);
       return [];
     }
@@ -909,7 +1101,7 @@ export class AutomationEngine {
    * Status and monitoring
    */
 
-  getAllActiveExecutions(): { [automationId: string]: any } {
+  getAllActiveExecutions(): Record<string, { automationId: string; startTime: Date; currentPhase: string; abortController?: AbortController }> {
     return Object.fromEntries(this.activeExecutions);
   }
 
@@ -939,13 +1131,18 @@ export class AutomationEngine {
     console.log(`${this.logPrefix} ${new Date().toISOString()} - ${message}`);
   }
 
-  private logError(message: string, error: any): void {
+  private logError(message: string, error: unknown): void {
     console.error(`${this.logPrefix} ${new Date().toISOString()} - ERROR: ${message}`, error);
   }
 
   // Get instance ID for debugging
   getInstanceId(): string {
     return this.instanceId;
+  }
+
+  // Get last restoration timestamp for health endpoint
+  public getLastRestorationTimestamp(): string | null {
+    return this.lastRestorationAttempt;
   }
 
   // Public method to manually trigger restoration (for emergency fixes)
@@ -976,7 +1173,23 @@ export class AutomationEngine {
   }
 
   // Debug method to inspect internal state and detect zombie jobs
-  getDebugInfo(): any {
+  getDebugInfo(): {
+    instanceId: string;
+    scheduledJobsCount: number;
+    activeExecutionsCount: number;
+    scheduledJobs: Array<{
+      automationId: string;
+      isRunning: boolean;
+      nextExecution: string;
+      executionConfig: ExecutionConfig;
+    }>;
+    activeExecutions: Array<{
+      executionId: string;
+      automationId: string;
+      startTime: string;
+      currentPhase: string;
+    }>;
+  } {
     return {
       instanceId: this.instanceId,
       scheduledJobsCount: this.scheduledJobs.size,
