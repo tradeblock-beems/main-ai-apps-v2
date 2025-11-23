@@ -1226,21 +1226,28 @@ export class AutomationEngine {
 // Add a type definition for our custom global variable to avoid TypeScript errors
 declare const global: typeof globalThis & {
   _automationEngineInstance: AutomationEngine | null;
+  _automationEngineProductionInstance: AutomationEngine | null;
 };
 
-// Production: Create instance immediately at module load (atomic, no race conditions)
-const productionInstance: AutomationEngine | null = 
-  process.env.NODE_ENV === 'production' ? new AutomationEngine() : null;
+// Production: Use global scope to ensure true singleton across all module loads
+// This prevents multiple instances during Next.js build phase (which loads modules multiple times)
+const productionInstance: AutomationEngine | null =
+  process.env.NODE_ENV === 'production'
+    ? (global._automationEngineProductionInstance || (global._automationEngineProductionInstance = new AutomationEngine()))
+    : null;
 
-// Log production instance creation
-if (productionInstance) {
-  console.log('[AutomationEngine] Production mode: Created atomic module-level singleton instance.');
+// Log production instance creation only if we just created it
+if (productionInstance && productionInstance === global._automationEngineProductionInstance) {
+  console.log('[AutomationEngine] Production mode: Created global singleton instance.');
 }
 
 export function getAutomationEngineInstance(): AutomationEngine {
   if (process.env.NODE_ENV === 'production') {
-    // Return pre-created instance (guaranteed to exist and be unique)
-    return productionInstance!;
+    // Always return the global instance (guaranteed unique across all module loads)
+    if (!global._automationEngineProductionInstance) {
+      global._automationEngineProductionInstance = new AutomationEngine();
+    }
+    return global._automationEngineProductionInstance!;
   } else {
     // Development: Use global caching for hot-reload resistance
     if (!global._automationEngineInstance) {
