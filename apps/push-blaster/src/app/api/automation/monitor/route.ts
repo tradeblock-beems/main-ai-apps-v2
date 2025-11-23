@@ -33,12 +33,13 @@ export async function GET(req: NextRequest) {
         }, { status: 400 });
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching monitoring data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json({
       success: false,
       message: 'Failed to fetch monitoring data',
-      errors: [error.message]
+      errors: [errorMessage]
     }, { status: 500 });
   }
 }
@@ -83,12 +84,13 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error controlling monitoring:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json({
       success: false,
       message: 'Failed to control monitoring',
-      errors: [error.message]
+      errors: [errorMessage]
     }, { status: 500 });
   }
 }
@@ -107,10 +109,8 @@ async function getOverviewData() {
       executions: Object.entries(activeExecutions).map(([id, execution]) => ({
         executionId: id,
         automationId: execution.automationId,
-        automationName: execution.automationName,
         phase: execution.currentPhase,
-        startTime: execution.startTime,
-        canCancel: execution.canCancel
+        startTime: execution.startTime
       }))
     },
     recentViolations: recentViolations.map(v => ({
