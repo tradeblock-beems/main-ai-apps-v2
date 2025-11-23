@@ -1231,8 +1231,9 @@ declare const global: typeof globalThis & {
 
 // Production: Use global scope to ensure true singleton across all module loads
 // This prevents multiple instances during Next.js build phase (which loads modules multiple times)
+// CRITICAL: Skip instance creation during Next.js build phase to prevent crashes
 const productionInstance: AutomationEngine | null =
-  process.env.NODE_ENV === 'production'
+  process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build'
     ? (global._automationEngineProductionInstance || (global._automationEngineProductionInstance = new AutomationEngine()))
     : null;
 
@@ -1241,8 +1242,19 @@ if (productionInstance && productionInstance === global._automationEngineProduct
   console.log('[AutomationEngine] Production mode: Created global singleton instance.');
 }
 
+// Log if skipped during build
+if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build') {
+  console.log('[AutomationEngine] Skipping instance creation during Next.js build phase');
+}
+
 export function getAutomationEngineInstance(): AutomationEngine {
   if (process.env.NODE_ENV === 'production') {
+    // Skip during build phase - return dummy instance to prevent crashes
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      console.log('[AutomationEngine] Build phase detected - skipping engine access');
+      throw new Error('AutomationEngine not available during build phase');
+    }
+
     // Always return the global instance (guaranteed unique across all module loads)
     if (!global._automationEngineProductionInstance) {
       global._automationEngineProductionInstance = new AutomationEngine();
