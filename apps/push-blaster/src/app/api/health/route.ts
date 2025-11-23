@@ -111,11 +111,14 @@ export async function GET() {
   const [seconds, nanoseconds] = process.hrtime(startTime);
   health.responseTimeMs = (seconds * 1000 + nanoseconds / 1000000).toFixed(2);
 
-  // Always return 200 for Railway healthcheck compatibility
+  // Return proper HTTP status codes for health monitoring
+  const httpStatus = health.status === 'healthy' ? 200 : 503;
+
   return NextResponse.json(health, {
-    status: 200,
+    status: httpStatus,
     headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate'
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'X-Health-Status': health.status
     }
   });
 }

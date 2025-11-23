@@ -81,10 +81,6 @@ BEFORE UPDATE ON automation_executions
 FOR EACH ROW
 EXECUTE FUNCTION update_automation_execution_timestamp();
 
--- Grant permissions (adjust role names as needed)
-GRANT SELECT, INSERT, UPDATE ON automation_executions TO authenticated;
-GRANT SELECT ON automation_last_executions TO authenticated;
-
 -- Sample query examples (for documentation)
 /*
 -- Get all executions for an automation
