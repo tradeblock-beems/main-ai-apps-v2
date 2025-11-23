@@ -19,7 +19,9 @@ const pool: Pool | null = DATABASE_URL ? new Pool({
   connectionTimeoutMillis: 10000, // Timeout for new connections
   statement_timeout: 30000, // 30 second query timeout
   query_timeout: 30000, // 30 second query timeout
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: {
+    rejectUnauthorized: false  // Always use SSL for Neon compatibility
+  }
 }) : null; // null pool will cause queries to fail gracefully with clear error messages
 
 // Database connection health check

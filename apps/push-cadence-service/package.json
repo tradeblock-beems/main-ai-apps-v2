@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "dotenv -e ../../.env -- next start -p 3002",
     "start:railway": "next start --port $PORT",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate": "node scripts/run-migration.js",
+    "postinstall": "npm run migrate || echo 'Migration failed or skipped - continuing...'"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

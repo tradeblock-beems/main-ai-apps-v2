@@ -1,6 +1,22 @@
 -- Create automation_executions table for persistent tracking
 -- Migration: 003_automation_executions.sql
 -- Purpose: Track all automation executions for historical analysis and alerting
+--
+-- MIGRATION NOTES:
+-- - Removed Supabase-specific GRANT statements (not compatible with Neon/Railway)
+-- - Neon uses database-level permissions, not table-level GRANTs
+-- - If migrating from Supabase to Neon, ensure service role has necessary permissions
+-- - Safe to run multiple times (CREATE TABLE IF NOT EXISTS)
+-- - Part of 5-layer automation resilience system (Layer 5: Database Execution Tracking)
+--
+-- Dependencies: None (standalone migration)
+-- Created: 2025-11-22
+-- Modified: 2025-11-23 - Removed Supabase GRANT statements for Neon compatibility
+--
+-- Deployment Integration:
+-- - Runs automatically via postinstall hook in package.json
+-- - Migration script: scripts/run-migration.js
+-- - Idempotent: Skips if table already exists
 
 CREATE TABLE IF NOT EXISTS automation_executions (
   -- Identity
